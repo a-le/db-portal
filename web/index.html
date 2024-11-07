@@ -1,0 +1,53 @@
+<!--
+// Copyright (C) 2024 https://github.com/a-le
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- following not commented line will be set by server. Example: 
+        <script>const versionInfo = { js: 'unix time', css: 'unix time', server: 'x.x.x', appname: 'cool name' }; const username = 'username';</script> 
+    -->
+    {{.js}}
+    <script>
+        // page title
+        document.title = versionInfo.appName;
+
+        // load css
+        document.write(`<link rel="stylesheet" type="text/css" href="/web/style.css?v=${versionInfo.css}">`);
+
+        // load js
+        let scripts = [];
+        scripts.push("mithril.min.js");
+        scripts = !new URLSearchParams(window.location.search).has('nominify')
+            ? [...scripts, "main.min.js"]
+            : [...scripts, "cmp/1-UIcmps.js", "cmp/App.js", "cmp/ConnForm.js", "cmp/ConnInfos.js", "cmp/Dict.js", "cmp/DataDict.js", "cmp/QryExplain.js", "cmp/QryForm.js",
+                "cmp/QryInfos.js", "cmp/QryResult.js", "cmp/SchemaForm.js"];
+        scripts.push("codemirror.min.js");
+        //scripts.push("codemirror.js");
+        scripts.forEach(script => document.write(`<script src="/web/${script}?v=${versionInfo.js}"><\/script>`));
+    </script>
+    <link rel="icon" type="image/png" sizes="16x16" href="/web/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/web/favicon-32x32.png">
+</head>
+
+<body>
+    <script>
+        m.mount(document.body, App);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,638 @@
+/* colors */
+
+:root {
+  --green: #5D8B5D;
+  --red: #9A4C4C;
+}
+
+/* Dark mode colors
+   (inspired by "Dark Modern" in Visual Code) 
+*/
+:root:has(body > .dark-mode) {
+  /* hsl(0, 0%, 9%) */
+  --primary-bg: #181818;
+  /* hsl(0, 0%, 12%) */
+  --secondary-bg: #1F1F1F;
+  /* hsl(0, 0%, 19%) */
+  --inputs-bg: #313131;
+  /* hsl(128, 4%, 14%) */
+  --primary-active-bg: #232424;
+  /* hsl(0, 0%, 26%) */
+  --secondary-active-bg: #434343;
+  /* hsl(0, 0%, 53%) */
+  --primary-text: #868686;
+  /* hsl(0, 0%, 80%) */
+  --secondary-text: #CCCCCC;
+  /* hsl(0, 0%, 24%) */
+  --button-hover: #3C3C3C;
+  /* hsl(128, 4%, 17%) */
+  --border: #2B2B2B;
+  /* hsl(0, 0%, 100%) */
+  --actived-border: #FFFFFF;
+  --actived-bg: var(--inputs-bg);
+  --actived-text: var(--actived-border);
+}
+
+/* Light mode colors
+  (inspired by Windows 10 light theme)
+*/
+:root:has(body > .light-mode) {
+  --primary-bg: hsl(0, 0%, 95%);
+  --secondary-bg: hsl(0, 0%, 100%);
+  --inputs-bg: hsl(0, 0%, 90%);
+  --primary-active-bg: hsl(0, 0%, 96%);
+  --secondary-active-bg: hsl(0, 0%, 74%);
+  --primary-text: hsl(0, 0%, 16%);
+  --secondary-text: hsl(0, 0%, 16%);
+  --button-hover: var(--secondary-bg);
+  --border: hsl(0, 0%, 79%);
+  --actived-border: hsl(205, 77%, 44%);
+  --actived-bg: var(--secondary-bg);
+  --actived-text: var(--primary-text);
+}
+
+
+/* 
+  color directives
+*/
+html, body {
+  background-color: var(--primary-bg) !important;
+  color: var(--primary-text);
+  scrollbar-color: var(--secondary-active-bg) var(--secondary-bg);
+}
+
+a {
+  color: var(--secondary-text);
+}
+
+.splitter {
+  background-color: var(--secondary-active-bg);
+}
+
+.splitter:hover {
+  background-color: #0078D4;
+  transition: background-color 0.5s;
+}
+
+fieldset {
+  /* background-color: var(--secondary-bg); */
+  border-color: var(--primary-text);
+}
+
+input, button, select, textarea {
+  color: var(--secondary-text);
+  background-color: var(--inputs-bg);
+  border-color: var(--border);
+  scrollbar-color: var(--secondary-active-bg) var(--secondary-bg);
+}
+
+button:not(:disabled):hover, select:not(:disabled):hover {
+  background-color: var(--button-hover);
+}
+
+.tab-b {
+  border-bottom-color: var(--border);
+}
+
+.tab-b.selected {
+  border-bottom-color: var(--primary-text);
+}
+
+.tab-l {
+  border-left-color: var(--border);
+}
+
+.tab-l.selected {
+  border-left-color: var(--primary-text);
+}
+
+.tab.selected {
+  color: var(--secondary-text);
+  background-color: var(--actived-bg);
+}
+
+table {
+  background-color: var(--secondary-bg);
+  border-color: var(--border);
+}
+
+caption {
+  background-color: var(--inputs-bg);
+  color: var(--secondary-text);
+}
+
+tbody tr:nth-of-type(even) {
+  background-color: var(--primary-active-bg);
+}
+
+th {
+  color: var(--secondary-text);
+  border-bottom-color: var(--border);
+  background-color: var(--secondary-bg);
+}
+
+th+td {
+  border-bottom-color: var(--border);
+}
+
+nav.brand {
+  background-color: var(--primary-bg);
+}
+
+.slider {
+  background-color: var(--secondary-active-bg);
+}
+
+.slider:before {
+  background-color: var(--primary-bg);
+}
+
+code {
+  background-color: var(--secondary-bg);
+  border-color: var(--border);
+}
+
+.cm-editor {
+  background-color: var(--secondary-bg);
+}
+
+.cm-gutters {
+  background-color: var(--inputs-bg) !important;
+}
+
+/*
+  main directives
+*/
+@font-face {
+  font-family: 'UbuntuMono';
+  src: url('/web/fonts/UbuntuMono-R.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+body {
+  line-height: 1.5;
+  font-family: Arial, sans-serif;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+div, code {
+  scrollbar-width: thin;
+}
+
+/* splitter */
+.splitter {
+  position: relative;
+}
+
+.splitter::before {
+  content: '';
+  position: absolute;
+  cursor: inherit;
+}
+
+.splitter-horizontal {
+  height: 3px;
+  width: 100%;
+  cursor: row-resize;
+}
+
+.splitter-horizontal::before {
+  top: -5px;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+}
+
+.splitter-vertical {
+  height: 100%;
+  width: 3px;
+  cursor: col-resize;
+}
+
+.splitter-vertical::before {
+  top: 0;
+  left: -5px;
+  right: -5px;
+  bottom: 0;
+}
+
+/* layout */
+.grid-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0px 0px;
+  grid-auto-flow: row;
+  grid-template-areas:
+    "area-main-header"
+    "area-main-menu"
+    "area-main-content"
+    "area-footer-content";
+  height: 100%;
+  padding: 0 10px;
+}
+
+/* query page */
+.grid-query {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* grid-template-rows: ?px 3px auto auto; see App.js */
+  gap: 0;
+  grid-template-areas:
+    "area-query-editor"
+    "area-query-splitter"
+    "area-query-output-menu"
+    "area-query-output";
+  height: 100%;
+}
+
+.area-query-output-menu {
+  margin-top: 5px;
+}
+
+.area-main-menu .grid {
+  margin-bottom: 5px; 
+  border-bottom: 1px solid var(--border);
+}
+
+/* editor and datadict */
+.grid-q-editor-datadict {
+  display: grid;
+  /* grid-template-columns: auto 3px auto;  see see App.js */
+  grid-template-rows: 1fr;
+  gap: 0;
+  grid-template-areas: "area-q-editor area-q-splitter area-q-datadict";
+  height: 100%;
+}
+
+/* Forms */
+fieldset {
+  display: inline-block;
+  border-width: 1px;
+  padding: 0px 5px 5px 5px;
+  margin: 0;
+  border-radius: 5px;
+  text-align: center;
+}
+
+legend {
+  margin-bottom: -4px;
+}
+
+input, button, select, textarea {
+  font: inherit;
+}
+
+input, button, select {
+  vertical-align: middle;
+  height: 22px;
+  line-height: 22px;
+  padding: 0 5px;
+  cursor: pointer;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 5px;
+}
+
+button:disabled, select:disabled,
+label:has(+ button:disabled), label:has(+ select:disabled) {
+  cursor: default;
+  opacity: 0.60;
+}
+
+label {
+  display: inline-block;
+  padding: 0 4px;
+}
+
+.datadict {
+  font-family: "UbuntuMono";
+  font-size: .8rem;
+  line-height: 1rem;
+  vertical-align: top;
+  width: 140px;
+  min-width: 140px;
+  padding-left: 8px;
+}
+
+.datadict label {
+  display: block;
+  cursor: pointer;
+}
+
+.datadict select {
+  width: 100%;
+  display: block;
+  border: none;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 5px;
+  outline-width: 1px;
+  outline-style: solid;
+}
+
+select:focus-visible {
+  outline: none;
+}
+
+/* tab */
+.tab {
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+/* grid */
+.grid {
+  display: grid;
+  overflow: hidden;
+}
+
+.grid-col {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+}
+
+/* Tables */
+.comptext {
+  font-family: "UbuntuMono";
+  font-size: .8rem;
+  line-height: 1rem;
+}
+
+table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  border-width: 1px;
+  border-style: solid;
+  border-top: 0;
+}
+
+/* caption {
+  border-width: 1px;
+  border-style: solid;
+} */
+th, td {
+  padding: 0 5px;
+  vertical-align: top;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+td>div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+th {
+  text-align: left;
+  font-weight: normal;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+
+th+td {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+
+td:has(code) {
+  padding: 0;
+}
+
+/* Class to disable text selection */
+.no-select {
+  user-select: none;
+  /* Prevent text selection */
+}
+
+nav.brand {
+  font-size: smaller;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+}
+
+nav.brand a {
+  text-decoration: none;
+}
+
+
+/* code mirror editor */
+code {
+  display: block;
+  overflow-y: auto;
+  border-width: 1px;
+  border-style: solid;
+  border-top: none;
+  white-space: pre;
+}
+
+.ͼ1.cm-focused {
+  outline: none;
+}
+
+/* Utility Classes */
+.text-warning {
+  color: var(--red) !important;
+}
+
+.text-smaller {
+  font-size: smaller;
+}
+
+.text-x-small {
+  font-size: x-small;
+}
+
+.no-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.cell-null {
+  opacity: 60%;
+  font-style: italic;
+}
+.cell-true {
+  font-style: italic;
+  color: var(--green);
+}
+.cell-false {
+  font-style: italic;
+  color: var(--red);
+}
+
+.tar {
+  text-align: right;
+}
+
+.tac {
+  text-align: center;
+}
+
+.info {
+  color: var(--green);
+  font-style: italic;
+}
+
+.no-select {
+  user-select: none;
+}
+
+.font-sm {
+  font-size: 80%;
+}
+
+.display-none {
+  display: none;
+}
+
+.align-items-end {
+  align-items: end;
+}
+
+.mt-5 {
+  margin-top: 5px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mb-5 {
+  margin-bottom: 5px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.mr-0 {
+  margin-right: 0;
+}
+
+.mr-5 {
+  margin-right: 5px;
+}
+
+.mr-10 {
+  margin-right: 10px;
+}
+
+.mr-20 {
+  margin-right: 20px;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+.ml-5 {
+  margin-left: 5px;
+}
+
+.ml-10 {
+  margin-left: 10px;
+}
+
+.ml-20 {
+  margin-left: 20px;
+}
+
+/* .p-1 {
+  padding: 10px;
+}
+
+.p-2 {
+  padding: 20px;
+} */
+/* General styling for the switch container */
+.toggle-switch {
+  display: inline-block;
+}
+
+/* The switch wrapper */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+/* Hide the default checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider (default state) */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: 0.4s;
+  border-radius: 22px;
+}
+
+/* The slider's knob */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+/* Move the slider knob to the right when checked */
+input:checked+.slider:before {
+  transform: translateX(18px);
+}
+
+/* Optional: Rounded slider */
+.slider.round {
+  border-radius: 22px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}

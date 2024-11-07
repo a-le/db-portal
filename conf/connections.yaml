@@ -1,0 +1,11 @@
+# example
+# pagila:
+#   db-type: postgresql
+#   dsn: # postgresql://user:password@localhost:5433/pagila
+#   env-dsn: POSTGRES_PAGILA_DSN
+
+# a sqlite3 sample database (https://github.com/lerocha/chinook-database)
+Chinook-Sqlite:
+  db-type: sqlite3
+  dsn: ./sampledb/Chinook_Sqlite_AutoIncrementPKs.sqlite
+  env-dsn: # will take precedence over dsn if set
