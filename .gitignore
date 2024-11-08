@@ -1,5 +1,5 @@
 /vendor/
 /releases/
 /tmp/
-godatabaseadmin
-godatabaseadmin.exe
+go-database-admin
+go-database-admin.exe
