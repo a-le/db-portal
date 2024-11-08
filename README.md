@@ -14,6 +14,7 @@
 - RESTful API access
 - Cross-platform support: Windows, Linux, and other OSes supported by Go
 - Built with love, leveraging incredible technologies: Go language, [MithrilJS](https://mithril.js.org/), and more.
+- The admin part is coming soon... stay tuned !
 
 ## Quick Installation
 1. Download the executable from `/builds` along with these folders: `/conf`, `/web`, `/sampledb`.
@@ -25,8 +26,11 @@
 Alternatively, clone the full repository and build your own executable.
 
 ## Roadmap
+- Save workspaces to browser localStorage
 - Support for SQL scripts and multi-statement queries
 - Improve data dictionnary
+- Backup and restore databases
+- Load / save query and script files
 
 ## Configuration
 
