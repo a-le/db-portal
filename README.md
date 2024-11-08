@@ -2,6 +2,9 @@
 
 **Description**: Query your databases through a sleek web interface and browse data dictionaries.
 
+## Demo
+![Loading animation](.github/demo.gif)
+
 ## Features
 - Multi-database support (PostgreSQL, MySQL/MariaDB, MSSQL, Firebird, and SQLite)
 - Export query results to `.csv` or `.xlsx` files
