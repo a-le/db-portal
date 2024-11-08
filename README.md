@@ -50,7 +50,6 @@ jwt-secret-key: "5Fy&f#cc7&lLhJr_+@"  # you should replace with your own random 
 env-jwt-secret-key: # environment variable that will take precedence over jwt-secret-key if set
 
 # DB
-db-timeout: 10  # seconds, will abort any queries that take longer than this. Default is 10
 max-resultset-length: 500  # maximum number of rows in a resultset. This applies only to the UI, not to file export. Default is 500
 
 # HTTPS support
@@ -59,24 +58,26 @@ cert-file:
 key-file:
 ```
 
-connections.yaml
+
+connections.yaml  
 *Add as many connections as you like.*
 ```yaml
-# example
-# pagila:
-#   db-type: postgresql
-#   dsn: # postgresql://postgres:password@localhost:5433/pagila
-#   env-dsn: POSTGRES_PAGILA_DSN
-
-# demo
+# Chinook: a sqlite3 sample database (https://github.com/lerocha/chinook-database)
 Chinook-Sqlite:
   db-type: sqlite3
   dsn: ./sampledb/Chinook_Sqlite_AutoIncrementPKs.sqlite
   env-dsn: # will take precedence over dsn if set
 
+# pagila: a postgresql sample database (https://github.com/devrimgunduz/pagila)
+#   pagila:
+#   db-type: postgresql
+#   dsn: # postgresql://postgres:password@localhost:5433/pagila
+#   env-dsn: POSTGRES_PAGILA_DSN
+
 ```
 
-users.yaml
+
+users.yaml  
 *Add as many users as you like. List connections available to user.*
 ```yaml
 demo: {
@@ -84,6 +85,7 @@ demo: {
 }
 
 ```
+
 
 .htpasswd  
 *Each user needs a entry there.  

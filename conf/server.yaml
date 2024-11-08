@@ -12,7 +12,6 @@ jwt-secret-key: "5Fy&f#cc7&lLhJr_+@"  # you should replace with your own random 
 env-jwt-secret-key: # environment variable that will take precedence over jwt-secret-key if set
 
 # DB
-db-timeout: 10  # seconds, will abort any queries that take longer than this. Default is 10
 max-resultset-length: 500  # maximum number of rows in a resultset. This applies only to the UI, not to file export. Default is 500
 
 # HTTPS support
