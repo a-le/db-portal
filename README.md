@@ -1,4 +1,5 @@
-# goDatabaseAdmin
+# goDatabaseAdmin 
+`go-database-admin`
 
 **Description**: Query your databases through a sleek web interface and browse data dictionaries.
 

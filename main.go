@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -77,9 +78,16 @@ func main() {
 		panic(fmt.Sprintf("error loading %v file: %v", commandsConfig.Filename, err))
 	}
 
-	/* auth variables */
-	htpasswdPath := serverConfig.Data.HtpasswdFile
-	jwtSecretKey := serverConfig.Data.JWTSecretKey
+	/* gen JWT secret key */
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-=_!@#$%^&*()")
+	b := make([]rune, 32)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	jwtSecretKey := string(b)
+
+	/* htpasswdFile */
+	htpasswdFile := serverConfig.Data.HtpasswdFile
 
 	/* chi router */
 	r := chi.NewRouter()
@@ -87,7 +95,7 @@ func main() {
 	r.Use(middleware.Compress(5, "text/html", "text/css", "application/json", "text/javascript"))
 
 	// connect endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/connect/{conn}", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Get("/api/connect/{conn}", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 		conname := chi.URLParam(r, "conn")
 
@@ -121,7 +129,7 @@ func main() {
 	})
 
 	// export endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Post("/api/export", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Post("/api/export", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 		conname := r.FormValue("conn")
 
@@ -235,7 +243,7 @@ func main() {
 	})
 
 	// query endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Post("/api/query", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Post("/api/query", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 		conname := r.FormValue("conn")
 
@@ -328,7 +336,7 @@ func main() {
 	// command endpoint. A command is a SQL statement for the UI
 	// commands are defined in config/commands.jsonc
 	// some commands do mot exists for some drivers
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/command/{conn}/{schema}/{command}", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Get("/api/command/{conn}/{schema}/{command}", func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
 		// Retrieve the username from the context
@@ -422,7 +430,7 @@ func main() {
 	})
 
 	// cnxnames endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/config/cnxnames", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Get("/api/config/cnxnames", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 
 		// reload config files if needed
@@ -446,7 +454,7 @@ func main() {
 
 	// clockresolution endpoint
 	var clockResolution time.Duration
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/clockresolution", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Get("/api/clockresolution", func(w http.ResponseWriter, r *http.Request) {
 		if clockResolution == 0 {
 			clockResolution = timer.EstimateMinClockResolution(10000)
 		}
@@ -463,7 +471,7 @@ func main() {
 	})
 
 	// logout endpoint. Is meant to be used with bad credentials so that the browser forgets those credentials
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/logout", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Get("/logout", func(w http.ResponseWriter, r *http.Request) {
 		// nothing to do
 	})
 
@@ -474,7 +482,7 @@ func main() {
 	})
 
 	// index page
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(htpasswdFile, jwtSecretKey)).Get("/", func(w http.ResponseWriter, r *http.Request) {
 		// check if min.js needs update
 		jsPath := "./web/cmp"
 		minjsPath := "./web/main.min.js"

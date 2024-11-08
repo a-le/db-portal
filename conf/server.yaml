@@ -7,11 +7,7 @@ addr: "localhost:3000"  # host:port to listen on. Default is "localhost:3000"
 # login file
 htpasswd-file: "./conf/.htpasswd"  # use /hash/{string} url to gen a bcrypt hash of a given string.
 
-# JWT - signing and the verifying key
-jwt-secret-key: "5Fy&f#cc7&lLhJr_+@"  # you should replace with your own random string
-env-jwt-secret-key: # environment variable that will take precedence over jwt-secret-key if set
-
-# DB
+# databases
 max-resultset-length: 500  # maximum number of rows in a resultset. This applies only to the UI, not to file export. Default is 500
 
 # HTTPS support
