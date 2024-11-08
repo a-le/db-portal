@@ -47,6 +47,7 @@ const ConnForm = {
                     App.conn = "";
                     App.schema = "";
                     ConnForm.DBerror = "";
+                    ConnForm.connecting = false;
 
                     SchemaForm.reset();
                     ConnInfos.reset();
