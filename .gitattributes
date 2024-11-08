@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+web/fonts/* linguist-vendored
+sampledb/* linguist-vendored
+web/*.js linguist-vendored
