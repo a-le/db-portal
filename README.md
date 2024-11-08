@@ -60,6 +60,7 @@ key-file:
 ```
 
 connections.yaml
+*Add as many connections as you like.*
 ```yaml
 # example
 # pagila:
@@ -76,6 +77,7 @@ Chinook-Sqlite:
 ```
 
 users.yaml
+*Add as many users as you like. List connections available to user.*
 ```yaml
 demo: {
   connections: ["Chinook-Sqlite"]
@@ -83,9 +85,9 @@ demo: {
 
 ```
 
-
 .htpasswd  
-you can get a suitable bcrypt hash (with salt) at /hash/replace_with_your_password
+*Each user needs a entry there.  
+you can get a suitable bcrypt hash (with salt) at /hash/replace_with_your_password*
 ```code
 demo:$2a$04$6dGMCRe9V2wXXnNRfM4twOZN2Le9kRd8TjI9FY4XVP4TSR8UpPdoS
 
