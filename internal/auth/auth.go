@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -87,6 +89,15 @@ func HashPassword(password string) string {
 func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+func RandomString(n int) string {
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-=_!@#$%^&*()")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
 
 // accepts JWT or Basic Auth
@@ -171,4 +182,19 @@ func Auth(htpasswdPath string, jwtSecretKey string) func(next http.Handler) http
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// Get the path to the .htpasswd file
+func HtpasswdPath(args []string, configPath string) (path string, err error) {
+
+	// path was given as command-line argument
+	if len(args) > 2 {
+		path = filepath.Clean(args[2])
+	} else {
+		path = filepath.Join(configPath, ".htpasswd")
+	}
+
+	_, err = os.Stat(path)
+
+	return path, err
 }

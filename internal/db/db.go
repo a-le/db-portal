@@ -68,7 +68,7 @@ func GetConn(DBType string, DSN string, useCache bool) (conn Conn, err error) {
 
 	// Open a new database connection pool
 	if !cacheHit {
-		fmt.Printf("initializing a new connection pool for the %s database with the %s Go driver\n", DBType, driverName)
+		//fmt.Printf("initializing a new connection pool for the %s database with the %s Go driver\n", DBType, driverName)
 		db, err = sql.Open(driverName, DSN)
 		if err != nil {
 			return

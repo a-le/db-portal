@@ -1,7 +1,7 @@
 # goDatabaseAdmin 
 `go-database-admin`
 
-**Description**: Query your databases through a sleek web interface and browse data dictionaries.
+**Description**: Query your SQL databases through a minimalist web interface, browse data dictionaries and perform admin tasks efficiently.
 
 ## Demo
 ![Loading animation](.github/demo.gif)
@@ -14,7 +14,6 @@
 - HTTPS support
 - RESTful API access
 - Cross-platform support: Windows, Linux, and other OSes supported by Go
-- Built with love, leveraging incredible technologies: Go language, [MithrilJS](https://mithril.js.org/), and more.
 - The admin part is coming soon... stay tuned !
 
 ## Quick Installation
@@ -27,11 +26,21 @@
 Alternatively, clone the full repository and build your own executable.
 
 ## Roadmap
-- Save workspaces to browser localStorage
-- Support for SQL scripts and multi-statement queries
-- Improve data dictionnary
-- Backup and restore databases
-- Load / save query and script files
+- Save workspace settings to browser local storage
+- Support for DSN without specifying a database for MySQL, MSSQL, and PostgreSQL
+- Support SQL scripts and multi-statement queries
+- Enhance data dictionary functionality
+- Enable database backup and restore
+- Load and save query/script files
+
+## Objectives
+- Deliver the full power of SQL and command-line DB utilities provided by database distributions, all in a clean and fast web interface.
+
+## Built With
+- Go language (see `go.mod` for a complete list of dependencies)
+- [MithrilJS](https://mithril.js.org/) (a JavaScript framework for building fast and modular applications)
+- [CodeMirror](https://codemirror.net/) (a powerful code editor component)
+- Custom CSS for styling
 
 ## Configuration
 
@@ -44,9 +53,9 @@ server.yaml
 addr: "localhost:3000"  # host:port to listen on. Default is "localhost:3000"
 
 # login file
-htpasswd-file: "./conf/.htpasswd"  # use /hash/{string} url to gen a bcrypt hash of a given string.
+htpasswd-file: "./.htpasswd"  # default "./.htpasswd" will look for the file in conf directory. Use absolute path otherwise.
 
-# DB
+# databases
 max-resultset-length: 500  # maximum number of rows in a resultset. This applies only to the UI, not to file export. Default is 500
 
 # HTTPS support
@@ -59,17 +68,18 @@ key-file:
 connections.yaml  
 *Add as many connections as you like.*
 ```yaml
-# Chinook: a sqlite3 sample database (https://github.com/lerocha/chinook-database)
+# example
+# pagila:                                                     # that's the name you'll see in the UI
+#   db-type: postgresql                                       # valid values: firebird, mysql, mssql, postgresql, sqlite3
+#   dsn: postgresql://user:password@localhost:5433/pagila     # DSN, all format supported. Database should be set in the DSN. 
+#   env-dsn: POSTGRES_PAGILA_DSN                              # Environment variable name. Which value will take precedence over dsn if set
+
+# a sqlite3 sample database (https://github.com/lerocha/chinook-database)
 Chinook-Sqlite:
   db-type: sqlite3
   dsn: ./sampledb/Chinook_Sqlite_AutoIncrementPKs.sqlite
-  env-dsn: # will take precedence over dsn if set
+  env-dsn:
 
-# pagila: a postgresql sample database (https://github.com/devrimgunduz/pagila)
-#   pagila:
-#   db-type: postgresql
-#   dsn: # postgresql://postgres:password@localhost:5433/pagila
-#   env-dsn: POSTGRES_PAGILA_DSN
 
 ```
 

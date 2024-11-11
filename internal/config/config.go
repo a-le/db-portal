@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -17,7 +18,7 @@ type Config[T any] struct {
 
 func New[T any](filename string) Config[T] {
 	return Config[T]{
-		Filename: filename,
+		Filename: filepath.Clean(filename),
 		ModTime:  time.Time{},
 		Data:     *new(T),
 	}
@@ -69,4 +70,32 @@ func (c *Config[T]) Reload() {
 	if err != nil {
 		fmt.Printf("error loading %v config file: %v\n", c.Filename, err)
 	}
+}
+
+func JoinPath(folderPath string, filePath string) string {
+	if filepath.IsAbs(filePath) {
+		return filePath
+	}
+
+	return filepath.Join(folderPath, filePath)
+}
+
+// Get the path to the config folder
+func ConfigPath(args []string) (path string, err error) {
+
+	// path given as command-line argument
+	if len(args) > 1 {
+		path = filepath.Clean(args[1])
+	} else {
+		// path is a /conf folder in the executable folder
+		var executablePath string
+		if executablePath, err = os.Executable(); err != nil {
+			return
+		}
+		path = filepath.Join(filepath.Dir(executablePath), "conf")
+	}
+
+	_, err = os.Stat(path)
+
+	return
 }

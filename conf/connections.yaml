@@ -1,11 +1,11 @@
 # example
-# pagila:
-#   db-type: postgresql
-#   dsn: # postgresql://user:password@localhost:5433/pagila
-#   env-dsn: POSTGRES_PAGILA_DSN
+# pagila:                                                     # that's the name you'll see in the UI
+#   db-type: postgresql                                       # valid values: firebird, mysql, mssql, postgresql, sqlite3
+#   dsn: postgresql://user:password@localhost:5433/pagila     # DSN, all format supported. Database should be set in the DSN. 
+#   env-dsn: POSTGRES_PAGILA_DSN                              # Environment variable name. Which value will take precedence over dsn if set
 
 # a sqlite3 sample database (https://github.com/lerocha/chinook-database)
 Chinook-Sqlite:
   db-type: sqlite3
   dsn: ./sampledb/Chinook_Sqlite_AutoIncrementPKs.sqlite
-  env-dsn: # will take precedence over dsn if set
+  env-dsn:
