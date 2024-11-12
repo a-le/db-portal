@@ -29,17 +29,19 @@ Alternatively, clone the full repository and build your own executable.
 - Save workspace settings to browser local storage
 - Support for DSN without specifying a database for MySQL, MSSQL, and PostgreSQL
 - Support SQL scripts and multi-statement queries
-- Enhance data dictionary functionality
-- Enable database backup and restore
 - Load and save query/script files
+- Enhance data dictionary functionality
+- Support database backup and restore 
+- Log user-issued queries (configurable)
 
 ## Objectives
-- Deliver the full power of SQL and command-line DB utilities provided by database distributions, all in a clean and fast web interface.
+- Enable the use of SQL and Database CLI tools within a clean and fast web interface.
+- Offer convenient access to customization options, including UI SQL commands and more.
 
 ## Built With
 - Go language (see `go.mod` for a complete list of dependencies)
-- [MithrilJS](https://mithril.js.org/) (a JavaScript framework for building fast and modular applications)
-- [CodeMirror](https://codemirror.net/) (a powerful code editor component)
+- [MithrilJS](https://mithril.js.org/) *a JavaScript framework for building fast and modular applications*
+- [CodeMirror](https://codemirror.net/) *a powerful code editor component*
 - Custom CSS for styling
 
 ## Configuration
