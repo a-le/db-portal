@@ -40,8 +40,8 @@ import (
 	"github.com/joho/sqltocsv"
 )
 
-const Version = "1.0.0-b2"
-const AppName = "goDatabaseAdmin"
+const Version = "1.0.0-b3"
+const AppName = "go-database-admin"
 
 func main() {
 	var err error

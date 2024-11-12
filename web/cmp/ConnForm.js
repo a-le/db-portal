@@ -65,7 +65,8 @@ const ConnForm = {
                 m(OptGroup, { rows: ConnForm.conns })
             ]),
             ConnForm.DBerror == "" ? null : [
-                m("button.ml-10", { onclick: () => { document.querySelector("#connSelect").dispatchEvent(new Event("change")); } }, "retry to connect")
+                m("button.ml-10", { onclick: () => { document.querySelector("#connSelect").dispatchEvent(new Event("change")); } }, "retry to connect"),
+                m("span.text-warning.ml-10", ConnForm.DBerror)
             ],
             ConnForm.connecting ? m(WaitingAnimation, { text: "connecting", class: "ml-10" }) : null 
         ];
