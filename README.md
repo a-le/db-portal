@@ -17,7 +17,7 @@
 - The admin part is coming soon... stay tuned !
 
 ## Quick Installation
-1. Download the executable from [Releases](../../releases) along with these folders: `/conf`, `/web`, `/sampledb`.
+1. Download the executable from [Releases](../../releases) along with these folders: `/conf`, `/web`, and optionally, /sampledb (a demo SQLite database).
 2. Modify the configuration files as needed.
 3. Run the executable from the command prompt.
 4. Open your browser and navigate to `localhost:3000`.
