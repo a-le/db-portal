@@ -1,5 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-web/fonts/* linguist-vendored
+conf/* linguist-vendored
 sampledb/* linguist-vendored
+web/fonts/* linguist-vendored
 web/*.js linguist-vendored
+web/*.png
