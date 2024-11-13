@@ -8,12 +8,9 @@
 
 ## Features
 - Multi-database support (PostgreSQL, MySQL/MariaDB, MSSQL, Firebird, and SQLite)
-- Export query results to `.csv` or `.xlsx` files
-- Install locally (single-user) or on a server (multi-user)
-- User authentication with HTTP Basic Auth and JSON Web Tokens (JWT)
-- HTTPS support
-- RESTful API access
+- Install locally (single-user) or on a server (multi-user) with HTTPS support
 - Cross-platform support: Windows, Linux, and other OSes supported by Go
+- Export data to `.csv` or `.xlsx` files
 - The admin part is coming soon... stay tuned !
 
 ## Quick Installation
@@ -43,6 +40,14 @@ Alternatively, clone the full repository and build your own executable.
 - [MithrilJS](https://mithril.js.org/) *a JavaScript framework for building fast and modular applications*
 - [CodeMirror](https://codemirror.net/) *a powerful code editor component*
 - Custom CSS for styling
+
+## Architecture Notes
+- Use RESTful APIs.
+- User authentication via HTTP Basic Auth and JSON Web Tokens (JWT).
+- Configuration files auto-reload.
+- No build step for JavaScript: `main.min.js` is automatically built on any `*.js` change.
+- User queries always use a new, clean connection to the database.
+- UI queries will use a connection from the pool if supported.
 
 ## Configuration
 
