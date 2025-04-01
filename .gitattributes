@@ -4,4 +4,7 @@ conf/* linguist-vendored
 sampledb/* linguist-vendored
 web/fonts/* linguist-vendored
 web/*.js linguist-vendored
-web/*.png
+web/*.png linguist-vendored
+vendor/* linguist-vendored
+*.png binary
+*.ttf binary
