@@ -32,7 +32,7 @@ const SchemaForm = {
                             DataDict.getProcedures();
                         }
                     }, [
-                        m("option", { value: "" }, "default"),
+                        m("option", { value: "" }, ""),
                         SchemaForm.schemas.rows.map(function (row) {
                             return [
                                 m("option", { value: row[0], selected: App.schema === row[0] }, row[0])

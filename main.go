@@ -1,18 +1,3 @@
-// Copyright (C) 2024 https://github.com/a-le
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 package main
 
 import (
@@ -24,62 +9,47 @@ import (
 
 	"net/http"
 	"os"
-	"slices"
 	"strings"
 	"time"
 
-	"godatabaseadmin/internal/auth"
-	"godatabaseadmin/internal/config"
-	"godatabaseadmin/internal/db"
-	"godatabaseadmin/internal/jsminifier"
-	"godatabaseadmin/internal/response"
-	"godatabaseadmin/internal/timer"
+	"db-portal/internal/auth"
+	"db-portal/internal/config"
+	"db-portal/internal/db"
+	"db-portal/internal/jsminifier"
+	"db-portal/internal/meta"
+	"db-portal/internal/response"
+	"db-portal/internal/timer"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/sqltocsv"
 )
 
-const Version = "1.0.0-b3"
-const AppName = "go-database-admin"
-
 func main() {
 	var err error
 
 	// get config folder path
-	var configPath string
-	if configPath, err = config.ConfigPath(os.Args); err != nil {
+	var ConfigPath string
+	if ConfigPath, err = config.ConfigPath(os.Args); err != nil {
 		log.Fatalf("error getting config path: %s", err)
 	}
 
-	// get .htpasswd file path
-	var htpasswdPath string
-	if htpasswdPath, err = auth.HtpasswdPath(os.Args, configPath); err != nil {
-		log.Fatalf("error getting .htpasswd path: %s", err)
-	}
-	fmt.Printf(".htpasswd file %s will be used\n", htpasswdPath)
+	auth.Initialize(ConfigPath)
 
 	// config
-	serverConfig := config.New[config.Server](configPath + "/server.yaml")
-	usersConfig := config.New[config.UsersConfig](configPath + "/users.yaml")
-	connectionsConfig := config.New[config.ConnectionsConfig](configPath + "/connections.yaml")
-	commandsConfig := config.New[config.CommandsConfig](configPath + "/commands.yaml")
+	serverConfig := config.New[config.Server](ConfigPath + "/server.yaml")
+	commandsConfig := config.New[config.CommandsConfig](ConfigPath + "/commands.yaml")
 
 	// load config files
 	if err := serverConfig.Load(); err != nil {
 		log.Fatalf("error loading %s file: %s", serverConfig.Filename, err)
 	}
-	if err := usersConfig.Load(); err != nil {
-		log.Fatalf("error loading %s file: %s", usersConfig.Filename, err)
-	}
-	if err := connectionsConfig.Load(); err != nil {
-		log.Fatalf("error loading %s file: %s", connectionsConfig.Filename, err)
-	}
+
 	if err := commandsConfig.Load(); err != nil {
 		log.Fatalf("error loading %s file: %s", commandsConfig.Filename, err)
 	}
 
-	// gen JWT secret key
+	// gen a random JWT secret key
 	jwtSecretKey := auth.RandomString(32)
 
 	// HTTP services router
@@ -88,65 +58,44 @@ func main() {
 	r.Use(middleware.Compress(5, "text/html", "text/css", "application/json", "text/javascript"))
 
 	// connect endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/connect/{conn}", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Get("/api/connect/{conn}", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 		conname := chi.URLParam(r, "conn")
 
-		// reload config files if needed
-		usersConfig.Reload()
-		connectionsConfig.Reload()
-
-		// check connection validity for this user
-		if !slices.Contains(usersConfig.Data[username].Connections, conname) {
-			http.Error(w, fmt.Sprintf("connection %v not allowed", conname), http.StatusForbidden)
-			return
-		}
-
-		// get connection config
-		connConfig, ok := connectionsConfig.Data[conname]
-		if !ok {
-			http.Error(w, fmt.Sprintf("connection %v not found", conname), http.StatusNotFound)
+		connConfig, err := auth.GetConnectionDetails(username, conname)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("connection %v not found or not allowed", conname), http.StatusNotFound)
 			return
 		}
 
 		// try to get conn from DB server
-		qResult := db.NewQResult()
+		dResult := db.DResult{}
 		var conn db.Conn
-		conn, qResult.DBerror = db.GetConn(connConfig.DBType, connConfig.DSN, true)
-		if qResult.DBerror == nil {
+		conn, dResult.DBerror = db.GetConn(connConfig.DBType, connConfig.DSN, true)
+		if dResult.DBerror == nil {
 			conn.Close()
 		}
 
 		// send response
-		response.SendJSON(&qResult, w)
+		response.SendJSON(&dResult, w)
 	})
 
 	// export endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Post("/api/export", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Post("/api/export", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 		conname := r.FormValue("conn")
 
 		// reload config files if needed
-		usersConfig.Reload()
-		connectionsConfig.Reload()
 		commandsConfig.Reload()
 
-		// check connection validity for this user
-		if !slices.Contains(usersConfig.Data[username].Connections, conname) {
-			http.Error(w, fmt.Sprintf("connection %v not allowed", conname), http.StatusForbidden)
-			return
-		}
-
-		// get connection
-		connConfig, ok := connectionsConfig.Data[conname]
-		if !ok {
-			http.Error(w, fmt.Sprintf("connection %v not found", conname), http.StatusNotFound)
+		connConfig, err := auth.GetConnectionDetails(username, conname)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("connection %v not found or not allowed", conname), http.StatusNotFound)
 			return
 		}
 
 		// get conn
 		var conn db.Conn
-		var err error
 		conn, err = db.GetConn(connConfig.DBType, connConfig.DSN, false)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -159,7 +108,7 @@ func main() {
 		if schema != "" {
 			setSchema, args, _ := commandsConfig.Data.Command("set-schema", connConfig.DBType, []string{schema})
 			if setSchema != "" {
-				_, err = db.Exec(conn, setSchema, args)
+				_, err = db.ExecContext(conn, setSchema, args)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -176,7 +125,7 @@ func main() {
 		if exportType == "csv" {
 			args := []any{}
 			var rows *sql.Rows
-			if rows, err = db.Query(ctx, conn, query, args); err != nil {
+			if rows, err = db.QueryContext(ctx, conn, query, args); err != nil {
 				fmt.Printf("err: %v", err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -198,7 +147,7 @@ func main() {
 		if exportType == "xlsx" {
 			args := []any{}
 			var rows *sql.Rows
-			if rows, err = db.Query(ctx, conn, query, args); err != nil {
+			if rows, err = db.QueryContext(ctx, conn, query, args); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -236,25 +185,16 @@ func main() {
 	})
 
 	// query endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Post("/api/query", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Post("/api/query", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 		conname := r.FormValue("conn")
 
 		// reload config files if needed
-		usersConfig.Reload()
-		connectionsConfig.Reload()
 		commandsConfig.Reload()
 
-		// check connection validity for this user
-		if !slices.Contains(usersConfig.Data[username].Connections, conname) {
-			http.Error(w, fmt.Sprintf("connection %v not allowed", conname), http.StatusForbidden)
-			return
-		}
-
-		// get connection
-		connConfig, ok := connectionsConfig.Data[conname]
-		if !ok {
-			http.Error(w, fmt.Sprintf("connection %v not found", conname), http.StatusNotFound)
+		connConfig, err := auth.GetConnectionDetails(username, conname)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("connection %v not found or not allowed", conname), http.StatusNotFound)
 			return
 		}
 
@@ -262,7 +202,6 @@ func main() {
 
 		// get conn
 		var conn db.Conn
-		var err error
 		conn, err = db.GetConn(connConfig.DBType, connConfig.DSN, false)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -275,7 +214,7 @@ func main() {
 		if schema != "" {
 			setSchema, args, _ := commandsConfig.Data.Command("set-schema", connConfig.DBType, []string{schema})
 			if setSchema != "" {
-				_, err = db.Exec(conn, setSchema, args)
+				_, err = db.ExecContext(conn, setSchema, args)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -291,14 +230,14 @@ func main() {
 				return
 			}
 			if command == "" {
-				qResult := db.NewQResult()
-				qResult.DBerror = fmt.Errorf("explain command is not supported for the %v database", connConfig.DBType)
-				response.SendJSON(&qResult, w)
+				dResult := db.DResult{}
+				dResult.DBerror = fmt.Errorf("explain command is not supported for the %v database", connConfig.DBType)
+				response.SendJSON(&dResult, w)
 				return
 			}
 
 			if connConfig.DBType == "mssql" {
-				_, err = db.Exec(conn, command, []any{})
+				_, err = db.ExecContext(conn, command, []any{})
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -310,12 +249,21 @@ func main() {
 
 		// execute the query and send json
 		ctx := r.Context()
-		qResult := db.NewQResult()
 		args := []any{}
-		qResult, err = db.QQuery(ctx, conn, query, args, serverConfig.Data.MaxResultsetLength, r.FormValue("statementType"))
+
+		stmtInfos := db.StmtInfos(query, connConfig.DBType)
+		dResult := db.DResult{}
+
+		if stmtInfos.Type == "query" {
+			dResult, err = db.DQueryContext(ctx, conn, query, args, int64(serverConfig.Data.MaxResultsetLength))
+		} else {
+			dResult, err = db.DExecContext(ctx, conn, query, args)
+		}
+		dResult.StmtType = stmtInfos.Type
+		dResult.StmtCmd = stmtInfos.Cmd
+
 		if err != nil {
 			if ctx.Err() == context.Canceled {
-				//fmt.Println("request canceled by client")
 				http.Error(w, "request canceled by client", http.StatusRequestTimeout)
 				return
 			}
@@ -323,13 +271,13 @@ func main() {
 			return
 		}
 
-		response.SendJSON(&qResult, w)
+		response.SendJSON(&dResult, w)
 	})
 
 	// command endpoint. A command is a SQL statement for the UI
 	// commands are defined in config/commands.jsonc
 	// some commands do mot exists for some drivers
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/command/{conn}/{schema}/{command}", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Get("/api/command/{conn}/{schema}/{command}", func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
 		// Retrieve the username from the context
@@ -337,24 +285,15 @@ func main() {
 		conname := chi.URLParam(r, "conn")
 
 		// reload config files if needed
-		usersConfig.Reload()
-		connectionsConfig.Reload()
 		commandsConfig.Reload()
 
-		// check connection validity for this user
-		if !slices.Contains(usersConfig.Data[username].Connections, conname) {
-			http.Error(w, fmt.Sprintf("connection <%v> is not allowed", conname), http.StatusForbidden)
+		connConfig, err := auth.GetConnectionDetails(username, conname)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("connection %v not found or not allowed", conname), http.StatusNotFound)
 			return
 		}
 
-		// get connection from config
-		connConfig, ok := connectionsConfig.Data[conname]
-		if !ok {
-			http.Error(w, fmt.Sprintf("connection <%v> could not be found", conname), http.StatusNotFound)
-			return
-		}
-
-		qResult := db.NewQResult()
+		dResult := db.DResult{}
 
 		// get list of args from the query string. Those are SQL identifiers for the SQL command
 		var urlArgs []string
@@ -374,35 +313,35 @@ func main() {
 
 		// send response if command is not implemented
 		if command == "" {
-			qResult.DBerror = fmt.Errorf("command <%v> is not supported for %v", chi.URLParam(r, "command"), connConfig.DBType)
-			response.SendJSON(&qResult, w)
+			dResult.DBerror = fmt.Errorf("command <%v> is not supported for %v", chi.URLParam(r, "command"), connConfig.DBType)
+			response.SendJSON(&dResult, w)
 			return
 		}
 
 		// conn
 		var conn db.Conn
-		conn, qResult.DBerror = db.GetConn(connConfig.DBType, connConfig.DSN, true)
-		if qResult.DBerror != nil {
-			response.SendJSON(&qResult, w)
+		conn, dResult.DBerror = db.GetConn(connConfig.DBType, connConfig.DSN, true)
+		if dResult.DBerror != nil {
+			response.SendJSON(&dResult, w)
 			return
 		}
 		defer conn.Close()
 
 		// Set the schema if specified.
 		// Then, defer a query to restore the schema to the default before the connection is returned to the DB pool.
-		// This is necessary because a connection pool is used for internal queries, and the schema change will persist.
+		// This is necessary because a connection pool is used for internal queries, and the schema will persist.
 		schema := chi.URLParam(r, "schema")
 		if schema != "" {
 			setSchema, args, _ := commandsConfig.Data.Command("set-schema", connConfig.DBType, []string{schema})
 			setSchemaDefault, _, _ := commandsConfig.Data.Command("set-schema-default", connConfig.DBType, []string{})
 			if setSchema != "" {
 				if setSchemaDefault != "" {
-					_, err = db.Exec(conn, setSchema, args)
+					_, err = db.ExecContext(conn, setSchema, args)
 					if err != nil {
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
 					}
-					defer db.Exec(conn, setSchemaDefault, []any{})
+					defer db.ExecContext(conn, setSchemaDefault, []any{})
 				} else {
 					http.Error(w, fmt.Sprintf("a 'set schema' command was defined, but the 'set-schema-default' command is empty. Driver is %s\n", connConfig.DBType), http.StatusInternalServerError)
 					return
@@ -413,32 +352,33 @@ func main() {
 
 		// run the command
 		if command != "" {
-			if qResult, err = db.QQuery(context.Background(), conn, command, args, 0, "query"); err != nil {
+			if dResult, err = db.DQueryContext(context.Background(), conn, command, args, 0); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
 
-		response.SendJSON(&qResult, w)
+		response.SendJSON(&dResult, w)
 	})
 
 	// cnxnames endpoint
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/config/cnxnames", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Get("/api/config/cnxnames", func(w http.ResponseWriter, r *http.Request) {
 		username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
 
-		// reload config files if needed
-		usersConfig.Reload()
-		connectionsConfig.Reload()
-
-		var rows [][]string
-		for _, cnxname := range usersConfig.Data[username].Connections {
-			config, exists := connectionsConfig.Data[cnxname]
-			if !exists {
-				fmt.Printf("connection %v for user %v not found.\n", cnxname, username)
-				continue
-			}
-			rows = append(rows, []string{cnxname, config.DBType})
+		rows, err := auth.GetUserConnections(username)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		//var rows [][]string
+		// for _, cnxname := range usersConfig.Data[username].Connections {
+		// 	config, exists := connectionsConfig.Data[cnxname]
+		// 	if !exists {
+		// 		fmt.Printf("connection %v for user %v not found.\n", cnxname, username)
+		// 		continue
+		// 	}
+		// 	rows = append(rows, []string{cnxname, config.DBType})
+		// }
 
 		response.SendJSON(&response.Data{
 			Data: rows,
@@ -447,7 +387,7 @@ func main() {
 
 	// clockresolution endpoint
 	var clockResolution time.Duration
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/api/clockresolution", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Get("/api/clockresolution", func(w http.ResponseWriter, r *http.Request) {
 		if clockResolution == 0 {
 			clockResolution = timer.EstimateMinClockResolution(10000)
 		}
@@ -464,7 +404,7 @@ func main() {
 	})
 
 	// logout endpoint. Is meant to be used with bad credentials so that the browser forgets those credentials
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/logout", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Get("/logout", func(w http.ResponseWriter, r *http.Request) {
 		// nothing to do
 	})
 
@@ -475,7 +415,7 @@ func main() {
 	})
 
 	// index page
-	r.With(auth.Auth(htpasswdPath, jwtSecretKey)).Get("/", func(w http.ResponseWriter, r *http.Request) {
+	r.With(auth.Auth(jwtSecretKey)).Get("/", func(w http.ResponseWriter, r *http.Request) {
 		// check if min.js needs update
 		jsPath := "./web/cmp"
 		minjsPath := "./web/main.min.js"
@@ -494,7 +434,7 @@ func main() {
 		// some js injected in the index.html
 		cssInfo, _ := os.Stat("./web/style.css")
 		jsCode := `<script>const versionInfo = { js: '%d', css: '%d', server: '%s', appName: '%s' };const username = '%s';</script>`
-		js := fmt.Sprintf(jsCode, jsInfos.ModTime().Unix(), cssInfo.ModTime().Unix(), Version, AppName, r.Context().Value(auth.UserContextKey).(string))
+		js := fmt.Sprintf(jsCode, jsInfos.ModTime().Unix(), cssInfo.ModTime().Unix(), meta.Version, meta.AppName, r.Context().Value(auth.UserContextKey).(string))
 
 		var data []byte
 		if data, err = os.ReadFile("./web/index.html"); err != nil {

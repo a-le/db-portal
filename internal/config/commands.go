@@ -9,6 +9,7 @@ import (
 
 // Struct for commands.yaml
 type CommandsConfig map[string]struct {
+	Clickhouse string `yaml:"clickhouse"`
 	Firebird   string `yaml:"firebird"`
 	Mssql      string `yaml:"mssql"`
 	Mysql      string `yaml:"mysql"`
@@ -23,6 +24,8 @@ func (c CommandsConfig) Command(name string, dbType string, identifiers []string
 		return
 	}
 	switch dbType {
+	case "clickhouse":
+		command = c[name].Clickhouse
 	case "firebird":
 		command = c[name].Firebird
 	case "mysql":

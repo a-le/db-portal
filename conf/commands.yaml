@@ -9,7 +9,7 @@
 #       - mysql: ?
 #       - firebird: ?
 #       - mssql: @p1 to @pN
-
+#      - clickhouse: %s
 
 
 ## set schema/database connection
@@ -19,6 +19,7 @@ set-schema:
   mysql: ""
   postgresql: "set schema '%s'"
   sqlite3: ""
+  clickhouse: "use %s"
 
 set-schema-default:
   firebird: ""
@@ -26,6 +27,7 @@ set-schema-default:
   mysql: ""
   postgresql: "set search_path to default"
   sqlite3: ""
+  clickhouse: "use default"
 
 # ##
 # current_database: # not tested
@@ -45,11 +47,12 @@ set-schema-default:
 
 ##
 conn-infos:
-  firebird: "SELECT null, null, rdb$get_context('SYSTEM', 'DB_NAME') AS \"file\", null, CURRENT_USER as \"user\", 'Firebird: ' || rdb$get_context('SYSTEM', 'ENGINE_VERSION') AS \"version\" FROM RDB$DATABASE"
-  mssql: "select @@SERVERNAME AS hostname, CONNECTIONPROPERTY('local_tcp_port') AS port, db_name() as db_name, null, user_name() as user_name, @@version as version"
-  mysql: "select @@hostname AS 'hostname', @@port AS 'port', database() as 'database', null, current_user() as 'current_user', version() as version"
-  postgresql: "select current_setting('listen_addresses') AS listen, current_setting('port') AS port, current_database() as database, current_setting('search_path') as search_path, user, version() as version"
-  sqlite3: "select null, null, file, null, null, 'SQLite: ' || sqlite_version() as version FROM pragma_database_list WHERE name = 'main'"
+  firebird: "SELECT null, null, rdb$get_context('SYSTEM', 'DB_NAME') AS \"file\", null, CURRENT_USER AS \"user\", 'Firebird: ' || rdb$get_context('SYSTEM', 'ENGINE_VERSION') AS \"version\" FROM RDB$DATABASE"
+  mssql: "select @@SERVERNAME as hostname, CONNECTIONPROPERTY('local_tcp_port') as port, db_name() as db_name, null, user_name() as user_name, @@version as version"
+  mysql: "select @@hostname as 'hostname', @@port AS 'port', database() as 'database', null, current_user() as 'current_user', version() as version"
+  postgresql: "select current_setting('listen_addresses') as listen, current_setting('port') as port, current_database() as database, current_setting('search_path') as search_path, user, version() as version"
+  sqlite3: "select null, null, file, null, null, 'SQLite ' || sqlite_version() as version from pragma_database_list where name = 'main'"
+  clickhouse: "select hostName() as hostname, getServerPort('tcp_port') as port, currentDatabase() as database, null, currentUser() as user, 'Clickhouse ' || version() as version"
 
 version:
   firebird: "SELECT 'Firebird: ' || rdb$get_context('SYSTEM', 'ENGINE_VERSION') AS version FROM rdb$database;"
@@ -57,6 +60,7 @@ version:
   mysql: "select version()"
   postgresql: "select version()"
   sqlite3: "select 'SQLite: ' || sqlite_version() as version"
+  clickhouse: "select 'Clickhouse: ' || version() as version"
 
 
 ## explain query
@@ -66,6 +70,7 @@ explain:
   mysql: "analyze" # query will be appended. No placeholder needed.
   postgresql: "explain analyze" # query will be appended. No placeholder needed.
   sqlite3: "EXPLAIN QUERY PLAN" # query will be appended. No placeholder needed.
+  clickhouse: "EXPLAIN" # query will be appended. No placeholder needed.
 
 ## activity
 activity:
@@ -74,6 +79,7 @@ activity:
   mysql: "show processlist"
   postgresql: "SELECT query_start, datname, state, query FROM pg_stat_activity where usename = current_user order by 1"
   sqlite3: ""
+  clickhouse: "select user, current_database, query, elapsed, memory_usage, query_id from system.processes"
 
 ## object lists
 schemas:
@@ -82,6 +88,7 @@ schemas:
   mysql: "" # show databases
   postgresql: "select schema_name from information_schema.schemata where schema_name not like 'pg\\_%' order by 1"
   sqlite3: ""
+  clickhouse: "select distinct lower(name) as name FROM system.databases order by lower(name)" #"SHOW DATABASES"
 
 tables:
   firebird: "SELECT RDB$RELATION_NAME AS TABLE_NAME FROM RDB$RELATIONS WHERE RDB$VIEW_BLR IS NULL AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0);"
@@ -89,6 +96,7 @@ tables:
   mysql: "show full tables WHERE Table_Type = 'BASE TABLE'"
   postgresql: "select table_name from information_schema.tables where table_schema = (select current_schema) and table_type = 'BASE TABLE' order by 1"
   sqlite3: "select name from sqlite_schema where type = 'table' order by 1"
+  clickhouse: "SELECT name FROM system.tables where database = currentDatabase() and engine <> 'View' order by 1"
 
 views:
   firebird: "SELECT RDB$RELATION_NAME AS VIEW_NAME FROM RDB$RELATIONS WHERE RDB$VIEW_BLR IS NOT NULL AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0);"
@@ -96,6 +104,7 @@ views:
   mysql: "SHOW FULL TABLES WHERE Table_Type LIKE 'VIEW';"
   postgresql: "select table_name from information_schema.views where table_schema = (select current_schema) order by 1"
   sqlite3: "select name from sqlite_schema where type = 'view' order by 1"
+  clickhouse: "SELECT name FROM system.tables where database = currentDatabase() and engine = 'View' ORDER BY name"
 
 procedures:
   firebird: "SELECT rdb$procedure_name, 'procedure' FROM rdb$procedures UNION SELECT rdb$function_name, 'function' FROM rdb$functions  order by 1"
@@ -103,6 +112,7 @@ procedures:
   mysql: "select routine_name from information_schema.routines where routine_schema IN (SELECT SCHEMA())"
   postgresql: "SELECT routine_name routine_type FROM information_schema.routines WHERE routine_schema = (select current_schema) order by 1"
   sqlite3: ""
+  clickhouse: ""
 
 ## object columns
 table-columns:
@@ -111,6 +121,7 @@ table-columns:
   mysql: "SHOW COLUMNS FROM %s"
   postgresql: "SELECT column_name as name, data_type as type, character_maximum_length as max_len, is_nullable as null, column_default as def from information_schema.columns where table_schema = (select current_schema) and table_name = $1 order by ordinal_position"
   sqlite3: "SELECT * FROM pragma_table_info(?) order by cid"
+  clickhouse: "SELECT name, type, is_in_primary_key FROM system.columns where database = currentDatabase() and table = '%s' ORDER BY position"
 
 view-columns:
   firebird: "SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_LENGTH, rf.RDB$DEFAULT_SOURCE, rf.RDB$NULL_FLAG FROM RDB$RELATION_FIELDS rf JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION"
@@ -118,6 +129,8 @@ view-columns:
   mysql: "SHOW COLUMNS FROM %s"
   postgresql: "SELECT column_name as name, data_type as type, character_maximum_length as max_len, is_nullable as null, column_default as def from information_schema.columns where table_schema = (select current_schema) and table_name = $1 order by ordinal_position"
   sqlite3: "SELECT * FROM pragma_table_info(?) order by cid"
+  clickhouse: "SELECT name, type, is_in_primary_key FROM system.columns where database = currentDatabase() and table = '%s' ORDER BY position"
+
 
 ## object definitions
 table-definition:
@@ -126,6 +139,7 @@ table-definition:
   mysql: "show create table `%s`"
   postgresql: ""
   sqlite3: "select sql from sqlite_schema where type = 'table' and name = ?"
+  clickhouse: "SHOW CREATE TABLE %s"
 
 view-definition:
   firebird: ""
@@ -133,6 +147,7 @@ view-definition:
   mysql: "show create view `%s`"
   postgresql: "SELECT pg_get_viewdef($1::regclass) as view_def"
   sqlite3: "select sql from sqlite_schema where type = 'view' and name = ?"
+  clickhouse: "SHOW CREATE TABLE %s"
 
 procedure-definition:
   firebird: "SELECT RDB$PROCEDURE_SOURCE AS PROCEDURE_CODE FROM RDB$PROCEDURES WHERE RDB$PROCEDURE_NAME = ?"
@@ -140,3 +155,4 @@ procedure-definition:
   mysql: "show create procedure `%s`"
   postgresql: "SELECT pg_get_functiondef($1::regproc) as function_def"
   sqlite3: ""
+  clickhouse: ""

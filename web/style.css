@@ -572,13 +572,11 @@ code {
   margin-left: 20px;
 }
 
-/* .p-1 {
-  padding: 10px;
+.ml-50 {
+  margin-left: 50px;
 }
 
-.p-2 {
-  padding: 20px;
-} */
+
 /* General styling for the switch container */
 .toggle-switch {
   display: inline-block;
@@ -636,3 +634,6 @@ input:checked+.slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+
+
+

@@ -83,7 +83,7 @@ const App = {
                                             class: App.tabState.selectedClass("explain"),
                                             onclick: () => App.tabState.set("explain")
                                         }, "explain"),
-                                        m("div.grid-col.align-items-end.ml-auto", m(QryInfos)), // QryInfos component
+                                        m("div.grid-col.align-items-end.ml-50", m(QryInfos)), // QryInfos component
                                     ),
                                 ),
                                 m("section.area-query-output",

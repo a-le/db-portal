@@ -1,9 +1,9 @@
 package response
 
 import (
+	"db-portal/internal/db"
 	"encoding/json"
 	"fmt"
-	"godatabaseadmin/internal/db"
 	"net/http"
 )
 
@@ -13,7 +13,7 @@ type Data struct {
 
 // Define an interface that includes accepted types
 type JSONResponse interface {
-	db.QResult | Data
+	db.DResult | Data
 }
 
 // SendJSON converts the response to JSON and sends it

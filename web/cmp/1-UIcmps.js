@@ -187,7 +187,11 @@ class TableDim {
 
         this.rows.forEach(row => {
             row.forEach((col, idx) => {
-                const len = Math.max(String(col).length, 2);
+                var len = 0;
+                if ( col == null ) len = 4;
+                else if ( typeof col == "object" ) len = JSON.stringify(col).length;
+                else len = String(col).length;
+                len = Math.max(len, 2);
                 if (!maxColLengths.has(idx) || len > maxColLengths.get(idx)) {
                     maxColLengths.set(idx, len);
                 }
@@ -286,7 +290,7 @@ const OptGroup = {
 const Cell = {
     classTar(type) {
         t = type.toLowerCase();
-        return ["name", "text"].includes(t) || t.includes("char") ? "" : "tar";
+        return ["string", "name", "text", "unknown"].includes(t) || t.includes("char") ? "" : "tar";
     },
     classCell(val) {
         if (val === null) return "cell-null";
@@ -298,13 +302,21 @@ const Cell = {
         if (val === null) return "null";
         if (val === true) return "true";
         if (val === false) return "false";
+        if (typeof val == "object") return JSON.stringify(val);
         return val;
     },
+    setTitleFromInnerText(e) {
+        if ( e.currentTarget.title === "" ) e.currentTarget.title = e.currentTarget.innerText;
+    },
     view: (vnode) => {
+        var displayVal = Cell.displayValue(vnode.attrs.val);
         return m("td", m("div", {
-            class: [Cell.classTar(vnode.attrs.type), Cell.classCell(vnode.attrs.val)].join(" "),
-            title: vnode.attrs.val
-        }, Cell.displayValue(vnode.attrs.val)))
+            onmouseover: (e) => {
+                Cell.setTitleFromInnerText(e);
+            },
+            class: [Cell.classTar(vnode.attrs.type), Cell.classCell(displayVal)].join(" "),
+        }, Cell.displayValue(displayVal)
+        ))
     }
 }
 
@@ -359,3 +371,32 @@ const getRequestExtract = () => {
         return JSON.parse(xhr.responseText); // Continue to parse response as JSON
     }
 }
+
+const DownloadIcon = {
+  view: ({ attrs }) => {
+    const {
+      size = 18,
+      color = "currentColor",
+      className = "",
+      style = "",
+      ...rest
+    } = attrs;
+    
+    // Ensure vertical-align is always applied to the outer <span>
+    const spanStyle = `vertical-align: middle;${style ? " " + style : ""}`;
+
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg"
+           viewBox="0 0 24 24"
+           width="${size}"
+           height="${size}"
+           fill="${color}"
+           class="${className}"
+           style="${style}">
+        <path d="M13 12H16L12 16L8 12H11V8H13V12ZM15 4H5V20H19V8H15V4ZM3 2.9918C3 2.44405 3.44749 2 3.9985 2H16L20.9997 7L21 20.9925C21 21.5489 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5447 3 21.0082V2.9918Z"/>
+      </svg>
+    `;
+
+    return m("span", {rest, style: spanStyle}, m.trust(svg));
+  }
+};

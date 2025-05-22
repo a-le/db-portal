@@ -1,5 +1,5 @@
 /vendor/
 /releases/
 /tmp/
-go-database-admin
-go-database-admin.exe
+db-portal
+db-portal.exe

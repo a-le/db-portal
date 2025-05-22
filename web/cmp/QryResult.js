@@ -44,7 +44,7 @@ const QryResult = {
                                     m("tbody", [
                                         QryForm.resp.rows.slice(startIndex, endIndex).map(function (row) {
                                             return m("tr", row.map(function (v, i) {
-                                                return m(Cell, { val: v, type: QryForm.resp.databaseType[i] });
+                                                return m(Cell, { val: v, type: QryForm.resp.databaseTypes[i] });
                                             }));
                                         })
                                     ])

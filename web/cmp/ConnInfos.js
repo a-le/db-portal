@@ -26,40 +26,47 @@ const ConnInfos = {
             extract: getRequestExtract(),
             params: { conn: App.conn, schema: App.schema },
         })
-            .then((result) => {
-                ConnInfos.response = result;
-                if (result.DBerror)
-                    return;
+        .then((result) => {
+            ConnInfos.response = result;
+            if (result.DBerror)
+                return;
 
-                let i = 0;
-                ConnInfos.hostname = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
-                ConnInfos.port = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
-                ConnInfos.database = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
-                ConnInfos.schema = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
-                ConnInfos.user = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
-                ConnInfos.version = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
-            })
+            let i = 0;
+            ConnInfos.hostname = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
+            ConnInfos.port = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
+            ConnInfos.database = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
+            ConnInfos.schema = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
+            ConnInfos.user = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
+            ConnInfos.version = !result.rows[0][i] ? null : { "key": result.cols[i], "value": result.rows[0][i] }; i++;
+        })
     },
     view: () => {
         return [
             !ConnInfos.response ? null : [
                 ConnInfos.response.DBerror ? m("div.text-warning", ConnInfos.response.DBerror) : [
-                    !ConnInfos.hostname ? null :
-                        m("div.font-sm.mr-20", ConnInfos.hostname.key + ": ",
-                            m("span.info", ConnInfos.hostname.value + (ConnInfos.port.value ? ":" + ConnInfos.port.value : ""))
-                        ),
                     !ConnInfos.database ? null :
-                        m("div.font-sm.mr-20", ConnInfos.database.key + ": ",
+                        m("div.font-sm.mr-20", 
+                            m("span", ConnInfos.database.key + ": "),
                             m("span.info", { title: ConnInfos.database.value }, ConnInfos.database.value.split(/[/\\]/).pop())
                         ),
-                    !ConnInfos.user ? null :
-                        m("div.font-sm.mr-20", ConnInfos.user.key + ": ", m("span.info", ConnInfos.user.value)),
                     !ConnInfos.schema ? null :
-                        m("div.font-sm.mr-20", ConnInfos.schema.key + ": ",
+                        m("div.font-sm.mr-20", 
+                            m("span", ConnInfos.schema.key + ": "),
                             m("span.info", ConnInfos.schema.value)
                         ),
+                    !ConnInfos.user ? null :
+                        m("div.font-sm.mr-20", 
+                            m("span", ConnInfos.user.key + ": "),
+                            m("span.info", ConnInfos.user.value)
+                        ),
+                    !ConnInfos.hostname ? null :
+                        m("div.font-sm.mr-20",
+                            m("span", ConnInfos.hostname.key + ": "),
+                            m("span.info", ConnInfos.hostname.value + (ConnInfos.port.value ? ":" + ConnInfos.port.value : ""))
+                        ),
                     !ConnInfos.version ? null :
-                        m("div.font-sm.mr-20.no-overflow", { style: "max-width: 220px;" }, ConnInfos.version.key + ": ",
+                        m("div.font-sm.mr-20.no-overflow", { style: "max-width: 220px;" },
+                            m("span", ConnInfos.version.key + ": "),
                             m("span.info", { title: ConnInfos.version.value }, ConnInfos.version.value)
                         )
                 ]

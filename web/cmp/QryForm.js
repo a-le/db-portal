@@ -2,7 +2,6 @@ const QryForm = {
     query: "",
     resp: null,
     exportType: "",
-    statementType: "",
     resizeObserver: null,
     editor: null,
     editorTheme: "",
@@ -31,7 +30,6 @@ const QryForm = {
         formData.set("conn", App.conn);
         formData.set("schema", App.schema);
         formData.set("query", QryForm.query);
-        formData.set("statementType", QryForm.statementType);
 
         m.request({
             method: "POST",
@@ -53,9 +51,7 @@ const QryForm = {
             QryForm.callError = e.code ? e.code + ": " + e.message : "no error message. The server did not respond.";
         });
     },
-
     // download results form: see view
-
     view: () => {
         return ConnForm.DBerror !== "" ? m('code.text-warning', ConnForm.DBerror) :
             !App.conn.length ? null :
@@ -97,7 +93,7 @@ const QryForm = {
                     }),
                     m("div[id=qryFormMenu]", { style: "padding: 0 6px;" },
                         m("fieldset",
-                            m("legend", "download results"),
+                            m("legend", "download result"),
                             /* it uses a classic form to permit file download */
                             m("form", {
                                 method: "POST",
@@ -127,12 +123,12 @@ const QryForm = {
                                 m("button[type=submit].ml-10", {
                                     title: "execute query and download results",
                                     disabled: QryForm.executing,
-                                }, "download"),
+                                }, m(DownloadIcon)),
                             ),
                         ),
                         m("div", { style: "float: right;" },
                             m("fieldset.ml-20",
-                                m("legend", "explain query"),
+                                m("legend", "query"),
                                 m("button[type=button]", {
                                     disabled: QryForm.executing,
                                     onclick: () => {
@@ -140,17 +136,6 @@ const QryForm = {
                                         App.tabState.set("explain");
                                     }
                                 }, "explain"),
-                            ),
-                            m("fieldset.ml-20",
-                                m("legend", "execute query"),
-                                m("select[name=statementType]", {
-                                    title: "'auto' || 'query' to return rows || 'exec' to return number of affected rows",
-                                    onchange: (e) => { QryForm.statementType = e.target.value }
-                                },
-                                    m("option", { value: "auto" }, "auto"),
-                                    m("option", { value: "query" }, "query"),
-                                    m("option", { value: "exec" }, "exec"),
-                                ),
                                 m("button[type=button].ml-10", {
                                     disabled: QryForm.executing,
                                     onclick: () => {

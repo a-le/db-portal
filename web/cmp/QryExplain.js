@@ -43,7 +43,7 @@ const QryExplain = {
                     m("tbody", [
                         QryExplain.resp.rows.map(function (row) {
                             return m("tr", row.map(function (v, i) {
-                                return m(Cell, { val: v, type: QryExplain.resp.databaseType[i] })
+                                return m(Cell, { val: v, type: QryExplain.resp.databaseTypes[i] })
                             }));
                         })
                     ])

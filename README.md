@@ -1,39 +1,38 @@
-# goDatabaseAdmin 
-`go-database-admin`
+# db-portal
+`db-portal`
 
-**Description**: Query your SQL databases through a minimalist web interface, browse data dictionaries and perform admin tasks efficiently.
+**Description**: 
+Query all your SQL databases through a minimalist web interface, browse data dictionaries and export data.
+Regroup and manage connections to DB and give your users access to them.
 
 ## Demo
 ![Loading animation](.github/demo.gif)
 
 ## Features
-- Multi-database support (PostgreSQL, MySQL/MariaDB, MSSQL, Firebird, and SQLite)
+- Multi-database support : Clickhouse, Firebird, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite
 - Install locally (single-user) or on a server (multi-user) with HTTPS support
 - Cross-platform support: Windows, Linux, and other OSes supported by Go
 - Export data to `.csv` or `.xlsx` files
-- The admin part is coming soon... stay tuned !
+- View query results in an smart table
+- Adapt data dict UI to your needs by simply editing sql commands (see conf/commands.yaml)
 
 ## Quick Installation
-1. Download the executable from [Releases](../../releases) along with these folders: `/conf`, `/web`, and optionally, /sampledb (a demo SQLite database).
-2. Modify the configuration files as needed.
-3. Run the executable from the command prompt.
-4. Open your browser and navigate to `localhost:3000`.
-5. Log in with the `demo` user (password: `demo`).
+1. Download the executable from [Releases](../../releases) along with these folders: `/conf`, `/web`.
+2. Run the executable from the command prompt.
+3. Open your browser and navigate to `localhost:3000`.
+4. Log in with the `admin` user (password: `admin`).
 
 Alternatively, clone the full repository and build your own executable.
 
 ## Roadmap
-- Save workspace settings to browser local storage
-- Support for DSN without specifying a database for MySQL, MSSQL, and PostgreSQL
+- Import csv file to table
 - Support SQL scripts and multi-statement queries
 - Load and save query/script files
 - Enhance data dictionary functionality
 - Support database backup and restore 
-- Log user-issued queries (configurable)
-
-## Objectives
-- Enable the use of SQL and Database CLI tools within a clean and fast web interface.
-- Offer convenient access to customization options, including UI SQL commands and more.
+- Act as a http DB proxy
+- APIs to manage users and connections
+- Split the project into 2 separate repositories: server (Go backend) and client (web frontend).
 
 ## Built With
 - Go language (see `go.mod` for a complete list of dependencies)
@@ -43,68 +42,59 @@ Alternatively, clone the full repository and build your own executable.
 
 ## Architecture Notes
 - Use RESTful APIs.
-- User authentication via HTTP Basic Auth and JSON Web Tokens (JWT).
+- User authentication via HTTP(s) Basic Auth and JSON Web Tokens (JWT).
 - Configuration files auto-reload.
-- No build step for JavaScript: `main.min.js` is automatically built on any `*.js` change.
 - User queries always use a new, clean connection to the database.
 - UI queries will use a connection from the pool if supported.
+- Oracle and DuckDB support
+- Dev: no build step for JavaScript: a new `main.min.js` is automatically built on any `*.js` change.
+- Dev: no CGO dependencies
 
-## Configuration
+## Server configuration
 
 server.yaml
 ```yaml
 # main configuration file
 # ! restart app if you change this file !
-
 # server address
 addr: "localhost:3000"  # host:port to listen on. Default is "localhost:3000"
-
-# login file
-htpasswd-file: "./.htpasswd"  # default "./.htpasswd" will look for the file in conf directory. Use absolute path otherwise.
-
 # databases
 max-resultset-length: 500  # maximum number of rows in a resultset. This applies only to the UI, not to file export. Default is 500
-
 # HTTPS support
 # use mkcert https://github.com/FiloSottile/mkcert for easy self-signed certificates. 
 cert-file:
 key-file:
 ```
 
+## Configuration
+db-portal use a sqlite DB to store its conf.
+To modify conf to your needs, you simply have to issue queries to the embedded sqlite3 DB `db-portal`.
 
-connections.yaml  
-*Add as many connections as you like.*
-```yaml
-# example
-# pagila:                                                     # that's the name you'll see in the UI
-#   db-type: postgresql                                       # valid values: firebird, mysql, mssql, postgresql, sqlite3
-#   dsn: postgresql://user:password@localhost:5433/pagila     # DSN, all format supported. Database should be set in the DSN. 
-#   env-dsn: POSTGRES_PAGILA_DSN                              # Environment variable name. Which value will take precedence over dsn if set
-
-# a sqlite3 sample database (https://github.com/lerocha/chinook-database)
-Chinook-Sqlite:
-  db-type: sqlite3
-  dsn: ./sampledb/Chinook_Sqlite_AutoIncrementPKs.sqlite
-  env-dsn:
-
+Changing default password for admin user.  
+you can gen a pwdhash from this url: http://localhost:3000/hash/replace-with-your-password
+```sql
+update user set pwdhash = '' where name = 'admin'
 
 ```
 
-
-users.yaml  
-*Add as many users as you like. List connections available to user.*
-```yaml
-demo: {
-  connections: ["Chinook-Sqlite"]
-}
+Adding a user
+```sql
+insert into user (name, pwdhash) values ('demo', 'password-hash');
 
 ```
 
+Adding a database connection
+use DSN format accepted by Go drivers
+```sql
+insert into connection (name, dbtype, dsn) values ('movies', 'sqlite3', 'file path');
 
-.htpasswd  
-*Each user needs a entry there.  
-you can get a suitable bcrypt hash (with salt) at /hash/replace_with_your_password*
-```code
-demo:$2a$04$6dGMCRe9V2wXXnNRfM4twOZN2Le9kRd8TjI9FY4XVP4TSR8UpPdoS
+```
+
+Associate an existing user with an existing database connection
+```sql
+insert into user_connection (user_id, connection_id) 
+  select u.id, c.id 
+  from   user u join connection c
+  where  u.name = 'demo' and c.name = 'movies';
 
 ```

@@ -1,14 +1,10 @@
 package auth
 
 import (
-	"bufio"
 	"context"
 	"encoding/base64"
-	"fmt"
 	"math/rand"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,79 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type contextKey string
-
 const jwtExpirationTime = time.Minute * 20 // expiration
-const UserContextKey = contextKey("username")
-
-type File struct {
-	modTime time.Time
-	content []string
-}
-
-var htpasswdFile = File{
-	modTime: time.Time{},
-	content: []string{},
-}
-
-// CheckCredentials checks if the provided username and password match the stored credentials in the file.
-func checkCredentials(filePath, username, password string) (bool, error) {
-
-	info, err := os.Stat(filePath)
-	if err != nil {
-		return false, err
-	}
-
-	if !info.ModTime().Equal(htpasswdFile.modTime) {
-		fmt.Printf("htpasswd file %s loaded\n", filePath)
-		file, err := os.Open(filePath)
-		if err != nil {
-			return false, err
-		}
-		defer file.Close()
-
-		var lines []string
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			lines = append(lines, scanner.Text())
-		}
-
-		if err := scanner.Err(); err != nil {
-			return false, fmt.Errorf("error reading file: %w", err)
-		}
-
-		htpasswdFile.content = lines
-		htpasswdFile.modTime = info.ModTime()
-	}
-
-	for lineNumber, line := range htpasswdFile.content {
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			return false, fmt.Errorf("malformed line. Line number: %d", lineNumber)
-		}
-
-		storedUsername := parts[0]
-		storedHash := parts[1]
-
-		if storedUsername == username {
-			if !checkPasswordHash(password, storedHash) {
-				return false, nil // Password does not match
-			}
-			return true, nil // Username and password match
-		}
-	}
-
-	return false, nil // Username not found
-}
 
 func HashPassword(password string) string {
 	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hash)
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }
 
 func RandomString(n int) string {
@@ -102,7 +30,7 @@ func RandomString(n int) string {
 
 // accepts JWT or Basic Auth
 // a JWT token is send through Authorization-Jwt header when Basic Auth is successful for further authentication
-func Auth(htpasswdPath string, jwtSecretKey string) func(next http.Handler) http.Handler {
+func Auth(jwtSecretKey string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check for JWT token in the custom Authorization-Jwt header
@@ -151,7 +79,7 @@ func Auth(htpasswdPath string, jwtSecretKey string) func(next http.Handler) http
 			username, password := parts[0], parts[1]
 
 			// Check credentials using bcrypt
-			if ok, err := checkCredentials(htpasswdPath, username, password); !ok || err != nil {
+			if ok, err := checkCredentials(username, password); !ok || err != nil {
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -182,19 +110,4 @@ func Auth(htpasswdPath string, jwtSecretKey string) func(next http.Handler) http
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-// Get the path to the .htpasswd file
-func HtpasswdPath(args []string, configPath string) (path string, err error) {
-
-	// path was given as command-line argument
-	if len(args) > 2 {
-		path = filepath.Clean(args[2])
-	} else {
-		path = filepath.Join(configPath, ".htpasswd")
-	}
-
-	_, err = os.Stat(path)
-
-	return path, err
 }

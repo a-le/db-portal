@@ -51,7 +51,7 @@ const DictColumns = {
                         m("tbody", [
                             resp.rows.map(function (row) {
                                 return m("tr", row.map(function (v, i) {
-                                    return m(Cell, { val: v, type: resp.databaseType[i] });
+                                    return m(Cell, { val: v, type: resp.databaseTypes[i] });
                                 }));
                             })
                         ])

@@ -1,3 +1,0 @@
-demo: {
-  connections: ["Chinook-Sqlite"]
-}
