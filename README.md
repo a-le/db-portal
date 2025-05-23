@@ -17,19 +17,33 @@ Regroup and manage connections to DB and give your users access to them.
 - Adapt data dict UI to your needs by simply editing sql commands (see conf/commands.yaml)
 
 ## Quick Installation
-1. Download the executable from [Releases](../../releases) along with these folders: `/conf`, `/web`.
-2. Run the executable from the command prompt.
-3. Open your browser and navigate to `localhost:3000`.
-4. Log in with the `admin` user (password: `admin`).
 
-Alternatively, clone the full repository and build your own executable.
+1. **Run the install script**
+
+**Linux/macOS:**  
+```bash
+curl -sSfL https://raw.githubusercontent.com/a-le/db-portal/main/install/install.sh | bash
+```
+
+**Windows (PowerShell):**  
+```powershell
+irm https://raw.githubusercontent.com/a-le/db-portal/main/install/install.ps1 | iex
+```
+
+2. **Open your browser and navigate to** [http://localhost:3000](http://localhost:3000)
+
+3. **Log in with the `admin` user**  
+   Password: `admin`
+
+---
+
+Alternatively, you can clone the full repository and build your own executable.
 
 ## Roadmap
-- Import csv file to table
-- Support SQL scripts and multi-statement queries
+- csv file import
+- Support SQL scripts via CLI tools
 - Load and save query/script files
 - Enhance data dictionary functionality
-- Support database backup and restore 
 - Act as a http DB proxy
 - APIs to manage users and connections
 - Split the project into 2 separate repositories: server (Go backend) and client (web frontend).
