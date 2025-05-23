@@ -22,12 +22,14 @@ Regroup and manage connections to DB and give your users access to them.
 
 **Linux/macOS:**  
 ```bash
-curl -sSfL https://raw.githubusercontent.com/a-le/db-portal/main/install/install.sh | bash
+curl -sSfL https://raw.githubusercontent.com/a-le/db-portal/main/install/install.sh -o install.sh
+bash install.sh
 ```
 
 **Windows (PowerShell):**  
 ```powershell
-irm https://raw.githubusercontent.com/a-le/db-portal/main/install/install.ps1 | iex
+irm https://raw.githubusercontent.com/a-le/db-portal/main/install/install.ps1 -OutFile install.ps1
+powershell -File install.ps1
 ```
 
 2. **Open your browser and navigate to** [http://localhost:3000](http://localhost:3000)
