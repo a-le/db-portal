@@ -8,11 +8,17 @@ import (
 	"strings"
 	"time"
 
+	"db-portal/internal/internaldb"
+
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const jwtExpirationTime = time.Minute * 20 // expiration
+
+type contextKey string
+
+const UserContextKey = contextKey("username")
 
 func HashPassword(password string) string {
 	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -30,7 +36,7 @@ func RandomString(n int) string {
 
 // accepts JWT or Basic Auth
 // a JWT token is send through Authorization-Jwt header when Basic Auth is successful for further authentication
-func Auth(jwtSecretKey string) func(next http.Handler) http.Handler {
+func Auth(connService *internaldb.Store, jwtSecretKey string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check for JWT token in the custom Authorization-Jwt header
@@ -79,7 +85,7 @@ func Auth(jwtSecretKey string) func(next http.Handler) http.Handler {
 			username, password := parts[0], parts[1]
 
 			// Check credentials using bcrypt
-			if ok, err := checkCredentials(username, password); !ok || err != nil {
+			if ok, err := connService.CheckUserCredentials(username, password); !ok || err != nil {
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return

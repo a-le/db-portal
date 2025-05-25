@@ -1,9 +1,8 @@
-package auth
+package internaldb
 
 import (
 	"database/sql"
 	"db-portal/internal/meta"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -11,38 +10,50 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type contextKey string
+//type contextKey string
+//const UserContextKey = contextKey("username")
 
-const UserContextKey = contextKey("username")
-
-var dbPath string
-var db *sql.DB
-
-func Initialize(configPath string) {
-	var err error
-	dbPath = filepath.Clean(filepath.Join(configPath, meta.AppName+".db"))
-	_, err = os.Stat(dbPath)
-	if err != nil {
-		panic("failed to find database file : " + dbPath + ". Error :  " + err.Error())
-	} else {
-		fmt.Printf("DB file %v will be used\n", dbPath)
-	}
-	db, _ = sql.Open("sqlite3", dbPath)
+type Store struct {
+	DBPath string
+	DB     *sql.DB
 }
 
-// ConnectionDetails holds the result of the query.
-type ConnectionDetails struct {
+func NewStore(configPath string) (*Store, error) {
+
+	dbPath := filepath.Clean(filepath.Join(configPath, meta.AppName+".db"))
+
+	if _, err := os.Stat(dbPath); err != nil {
+		return nil, err
+	}
+
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Store{
+		DBPath: dbPath,
+		DB:     db,
+	}, nil
+}
+
+func (s *Store) WarmUp() error {
+	row := s.DB.QueryRow("SELECT 1")
+	var i int
+	return row.Scan(&i)
+}
+
+// ConnDetails holds the result of the query.
+type ConnDetails struct {
 	DBType string
 	DSN    string
 }
 
-// GetConnectionDetails retrieves the dbtype and dsn for a given user and connection name.
-func GetConnectionDetails(username, name string) (details ConnectionDetails, err error) {
+// FetchConn retrieves the dbtype and dsn for a given user and connection name.
+func (s *Store) FetchConn(username, name string) (ConnDetails, error) {
 
 	if name == "db-portal" {
-		details.DBType = "sqlite3"
-		details.DSN = dbPath
-		return
+		return ConnDetails{DBType: "sqlite3", DSN: s.DBPath}, nil
 	}
 
 	query := `
@@ -51,22 +62,22 @@ func GetConnectionDetails(username, name string) (details ConnectionDetails, err
         inner join user u       on u.id = uc.user_id
         inner join connection c on c.id = uc.connection_id
         where      u.name = ? 
-		  and      c.name = ?`
-	err = db.QueryRow(query, username, name).Scan(&details.DBType, &details.DSN)
-
-	return
+          and      c.name = ?`
+	var details ConnDetails
+	err := s.DB.QueryRow(query, username, name).Scan(&details.DBType, &details.DSN)
+	return details, err
 }
 
-func GetUserConnections(username string) ([][]string, error) {
+func (s *Store) FetchUserConns(username string) ([][]string, error) {
 	query := `
         select     c.name, c.dbtype
         from       user_connection uc
         inner join user u       on u.id = uc.user_id
         inner join connection c on c.id = uc.connection_id
         where      u.name = ?
-		order by   c.dbtype, c.name`
+        order by   c.dbtype, c.name`
 
-	rows, err := db.Query(query, username)
+	rows, err := s.DB.Query(query, username)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +92,6 @@ func GetUserConnections(username string) ([][]string, error) {
 		connections = append(connections, []string{name, dbtype})
 	}
 
-	// Check for errors from iterating over rows
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -90,12 +100,10 @@ func GetUserConnections(username string) ([][]string, error) {
 }
 
 // checks if the provided username and password match the stored credentials.
-func checkCredentials(username, password string) (bool, error) {
-
+func (s *Store) CheckUserCredentials(username, password string) (bool, error) {
 	query := `select pwdhash from user where name = ?`
-	// Execute the query
 	var pwdhash string
-	err := db.QueryRow(query, username).Scan(&pwdhash)
+	err := s.DB.QueryRow(query, username).Scan(&pwdhash)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

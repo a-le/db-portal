@@ -42,6 +42,7 @@ powershell -File install.ps1
 Alternatively, you can clone the full repository and build your own executable.
 
 ## Roadmap
+- code refactoring
 - csv file import
 - Support SQL scripts via CLI tools
 - Load and save query/script files

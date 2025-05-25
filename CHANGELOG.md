@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2.1
+- **Code refactoring & cleanup**
+
 ## v0.2.0
 
 - **Project renamed to `db-portal`**
