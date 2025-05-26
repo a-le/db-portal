@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2.2
+- **Code quality improvment**
+
 ## v0.2.1
 - **Code refactoring & cleanup**
 
