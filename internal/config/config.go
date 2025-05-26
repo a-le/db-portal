@@ -28,14 +28,13 @@ func New[T any](filename string) Config[T] {
 func LoadYAMLConfig[T any](filename string, target T) (T, error) {
 	var err error
 
-	fileContent, err := os.ReadFile(filename)
-	if err != nil {
+	var fileContent []byte
+	if fileContent, err = os.ReadFile(filename); err != nil {
 		return target, err
 	}
 
 	// Unmarshal YAML content into target struct
-	err = yaml.Unmarshal(fileContent, &target)
-	if err != nil {
+	if err = yaml.Unmarshal(fileContent, &target); err != nil {
 		return target, err
 	}
 
@@ -45,8 +44,8 @@ func LoadYAMLConfig[T any](filename string, target T) (T, error) {
 // Load config file. The file is only read once unless it is modified.
 func (c *Config[T]) Load() (err error) {
 
-	info, err := os.Stat(c.Filename)
-	if err != nil {
+	var info os.FileInfo
+	if info, err = os.Stat(c.Filename); err != nil {
 		return err
 	}
 
@@ -54,8 +53,7 @@ func (c *Config[T]) Load() (err error) {
 		return
 	}
 
-	c.Data, err = LoadYAMLConfig(c.Filename, c.Data)
-	if err != nil {
+	if c.Data, err = LoadYAMLConfig(c.Filename, c.Data); err != nil {
 		return err
 	}
 
@@ -66,8 +64,7 @@ func (c *Config[T]) Load() (err error) {
 
 // Same as load, but print error on console and doesn't return error
 func (c *Config[T]) Reload() {
-	err := c.Load()
-	if err != nil {
+	if err := c.Load(); err != nil {
 		fmt.Printf("error loading %v config file: %v\n", c.Filename, err)
 	}
 }
@@ -81,7 +78,7 @@ func JoinPath(folderPath string, filePath string) string {
 }
 
 // Get the path to the config folder
-func ConfigPath(args []string) (path string, err error) {
+func NewConfigPath(args []string) (path string, err error) {
 
 	// path given as command-line argument
 	if len(args) > 1 {

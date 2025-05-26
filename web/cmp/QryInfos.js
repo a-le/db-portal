@@ -28,7 +28,7 @@ const QryInfos = {
                     m('span.info', {
                         class: QryInfos.truncated ? "text-warning" : "",
                         title: QryInfos.truncated ? "The result is truncated. Use export to get the full result." : "",
-                    }, QryInfos.rowsReturned + (QryInfos.truncated ? "+" : ""))
+                    }, QryInfos.rowsReturned)
                 ),
                 m("div.tab-addon.font-sm.mr-20", {style: "min-width: 130px; "}, "rows affected: ", m("span.info", QryInfos.rowsAffected)),
                 m("div.tab-addon.font-sm.mr-20", "duration: ", m("span.info", QryInfos.duration)),
