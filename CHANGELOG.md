@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2.3
+- **Code restructuring**
+
 ## v0.2.2
 - **Code quality improvment**
 
