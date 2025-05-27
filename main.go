@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"db-portal/internal/auth"
 	"db-portal/internal/config"
@@ -32,25 +31,15 @@ func main() {
 	}
 	fmt.Printf("DB file %v will be used as internal DB\n", store.DBPath)
 
-	// warm up internal DB so that 1st request is not slow
-	fmt.Print("internal DB warmup")
-	done := make(chan struct{})
-	go func() { // Start a goroutine to print a dot every second
-		for {
-			select {
-			case <-done:
-				return
-			default:
-				fmt.Print(".")
-				time.Sleep(1 * time.Second)
-			}
+	// warm up internal DB in the background so that 1st request is not slow
+	fmt.Println("DB warmup start")
+	go func() {
+		if err := store.WarmUp(); err != nil {
+			log.Printf("error warming up internal DB: %v", err)
+		} else {
+			fmt.Println("DB warmup done")
 		}
 	}()
-	if err := store.WarmUp(); err != nil {
-		log.Fatalf("error warming up internal DB: %v", err)
-	}
-	close(done)
-	fmt.Println()
 
 	// load server config file
 	serverConfig := config.New[config.Server](configPath + "/server.yaml")
@@ -67,7 +56,7 @@ func main() {
 	// gen a random JWT secret key
 	jwtSecretKey := auth.RandomString(32)
 
-	//
+	// initialize services for handlers
 	svcs := &handlers.Services{
 		Store:          store,
 		CommandsConfig: &commandsConfig,
@@ -118,18 +107,22 @@ func main() {
 	// serve static files
 	r.Handle("/web/*", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
 
+	// create HTTP server
 	httpServer := &http.Server{
 		Addr:    serverConfig.Data.Addr,
 		Handler: r,
 	}
 
+	// if the server config has a cert and key file, use HTTPS, otherwise use HTTP
 	if serverConfig.Data.CertFile != "" && serverConfig.Data.KeyFile != "" {
 		fmt.Printf("HTTPS server is listening on %s\n", serverConfig.Data.Addr)
+		// start HTTPS server
 		if err := httpServer.ListenAndServeTLS(serverConfig.Data.CertFile, serverConfig.Data.KeyFile); err != nil {
 			log.Fatalf("main: HTTPS server failed to start on %s: %v", httpServer.Addr, err)
 		}
 	} else {
 		fmt.Printf("HTTP server is listening on %s\n", serverConfig.Data.Addr)
+		// start HTTP server
 		if err := httpServer.ListenAndServe(); err != nil {
 			log.Fatalf("main: HTTP server failed to start on %s: %v", httpServer.Addr, err)
 		}

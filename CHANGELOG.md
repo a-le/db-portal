@@ -1,13 +1,8 @@
 # Changelog
 
-## v0.2.3
-- **Code restructuring**
-
-## v0.2.2
-- **Code quality improvment**
-
-## v0.2.1
-- **Code refactoring & cleanup**
+## v0.2.1-beta
+- **Code refactoring, cleanup and quality improvment**
+- **Add DB warmup when server start**
 
 ## v0.2.0
 
