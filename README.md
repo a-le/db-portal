@@ -42,14 +42,15 @@ powershell -File install.ps1
 Alternatively, you can clone the full repository and build your own executable.
 
 ## Roadmap
-- code refactoring
+- codebase reorganization and quality improvements (almost done)
 - csv file import
 - Support SQL scripts via CLI tools
 - Load and save query/script files
 - Enhance data dictionary functionality
 - Act as a http DB proxy
 - APIs to manage users and connections
-- Split the project into 2 separate repositories: server (Go backend) and client (web frontend).
+- Split the project into 2 separate repositories: server (Go backend) and client (web frontend) ?
+- Oracle and DuckDB support ?
 
 ## Built With
 - Go language (see `go.mod` for a complete list of dependencies)
@@ -63,7 +64,6 @@ Alternatively, you can clone the full repository and build your own executable.
 - Configuration files auto-reload.
 - User queries always use a new, clean connection to the database.
 - UI queries will use a connection from the pool if supported.
-- Oracle and DuckDB support
 - Dev: no build step for JavaScript: a new `main.min.js` is automatically built on any `*.js` change.
 - Dev: no CGO dependencies
 
