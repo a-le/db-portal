@@ -8,6 +8,7 @@ import (
 
 	"db-portal/internal/auth"
 	"db-portal/internal/config"
+	"db-portal/internal/export"
 	"db-portal/internal/handlers"
 	"db-portal/internal/internaldb"
 
@@ -16,7 +17,6 @@ import (
 )
 
 func main() {
-	var err error
 
 	// get config folder path
 	configPath, err := config.NewConfigPath(os.Args)
@@ -61,51 +61,29 @@ func main() {
 		Store:          store,
 		CommandsConfig: &commandsConfig,
 		ServerConfig:   &serverConfig,
+		Exporter:       &export.DefaultExporter{},
 		JWTSecretKey:   jwtSecretKey,
 	}
 
-	// HTTP services router
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Compress(5, "text/html", "text/css", "application/json", "text/javascript"))
 
-	// connect endpoint
-	r.With(auth.Auth(store, jwtSecretKey)).Get("/api/connect/{conn}", svcs.ConnectHandler)
+	authMw := auth.Auth(store, jwtSecretKey) // auth middleware
+	r.Route("/api", func(api chi.Router) {
+		api.Use(authMw)
 
-	// export endpoint
-	r.With(auth.Auth(store, jwtSecretKey)).Post("/api/export", svcs.ExportHandler)
-
-	// query endpoint
-	r.With(auth.Auth(store, jwtSecretKey)).Post("/api/query", svcs.QueryHandler)
-
-	// command endpoint. Those are SQL statement used by the UI
-	r.With(auth.Auth(store, jwtSecretKey)).Get("/api/command/{conn}/{schema}/{command}", svcs.CommandHandler)
-
-	// DB connections list
-	r.With(auth.Auth(store, jwtSecretKey)).Get("/api/config/cnxnames", svcs.CnxNamesHandler)
-
-	// estimate clock resolution (result is cached)
-	r.With(auth.Auth(store, jwtSecretKey)).Get("/api/clockresolution", svcs.ClockResolutionHandler)
-
-	// cnxnames endpoint
-	r.With(auth.Auth(store, jwtSecretKey)).Get("/api/config/cnxnames", svcs.CnxNamesHandler)
-
-	// index page
-	r.With(auth.Auth(store, jwtSecretKey)).Get("/", svcs.IndexHandler)
-
-	// return a bcrypt hash of a string (useful for password hashing)
-	// there is some salt in the hash, so the result will be different each time
-	r.Get("/hash/{string}", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(auth.HashPassword(chi.URLParam(r, "string"))))
+		api.Get("/connect/{conn}", svcs.ConnectHandler)
+		api.Post("/export", svcs.ExportHandler)
+		api.Post("/query", svcs.QueryHandler)
+		api.Get("/command/{conn}/{schema}/{command}", svcs.CommandHandler)
+		api.Get("/config/cnxnames", svcs.CnxNamesHandler)
+		api.Get("/clockresolution", svcs.ClockResolutionHandler)
 	})
-
-	// logout endpoint. Is meant to be used with bad credentials so that the browser forgets those credentials
-	r.With(auth.Auth(store, jwtSecretKey)).Get("/logout", func(w http.ResponseWriter, r *http.Request) {
-		// nothing to do
-	})
-
-	// serve static files
-	r.Handle("/web/*", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
+	r.With(authMw).Get("/", svcs.IndexHandler)
+	r.With(authMw).Get("/logout", svcs.LogoutHandler)
+	r.Get("/hash/{string}", svcs.HashHandler)
+	r.Handle("/web/*", svcs.StaticFileHandler())
 
 	// create HTTP server
 	httpServer := &http.Server{
@@ -113,19 +91,18 @@ func main() {
 		Handler: r,
 	}
 
-	// if the server config has a cert and key file, use HTTPS, otherwise use HTTP
-	if serverConfig.Data.CertFile != "" && serverConfig.Data.KeyFile != "" {
-		fmt.Printf("HTTPS server is listening on %s\n", serverConfig.Data.Addr)
-		// start HTTPS server
-		if err := httpServer.ListenAndServeTLS(serverConfig.Data.CertFile, serverConfig.Data.KeyFile); err != nil {
-			log.Fatalf("main: HTTPS server failed to start on %s: %v", httpServer.Addr, err)
+	// start the server with HTTPS if cert and key files are provided, otherwise use HTTP
+	scd := serverConfig.Data
+	useHTTPS := scd.CertFile != "" && scd.KeyFile != ""
+	if useHTTPS {
+		fmt.Printf("server is listening at https://%s\n", httpServer.Addr)
+		if err := httpServer.ListenAndServeTLS(scd.CertFile, scd.KeyFile); err != nil {
+			log.Fatalf("server failed to start at https://%s: %v", httpServer.Addr, err)
 		}
 	} else {
-		fmt.Printf("HTTP server is listening on %s\n", serverConfig.Data.Addr)
-		// start HTTP server
+		fmt.Printf("server is listening at http://%s\n", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil {
-			log.Fatalf("main: HTTP server failed to start on %s: %v", httpServer.Addr, err)
+			log.Fatalf("server failed to start at https://%s: %v", httpServer.Addr, err)
 		}
 	}
-
 }

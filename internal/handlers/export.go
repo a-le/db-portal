@@ -4,12 +4,7 @@ import (
 	"db-portal/internal/auth"
 	"db-portal/internal/db"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"time"
-
-	"github.com/joho/sqltocsv"
 )
 
 func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,34 +49,17 @@ func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch exportType {
 	case "csv":
-		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", "attachment; filename=export_"+time.Now().Format("20060102-150405")+".csv")
-		if err := sqltocsv.Write(w, rows); err != nil {
+		if err := s.Exporter.ExportCSV(w, rows); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	case "json":
+		if err := s.Exporter.ExportJSON(w, rows); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	case "xlsx":
-		tmpfile, err := os.CreateTemp("", "dbexport_*.xlsx")
-		if err != nil {
-			http.Error(w, "unable to create temp file", http.StatusInternalServerError)
-			return
-		}
-		defer os.Remove(tmpfile.Name())
-		defer tmpfile.Close()
-
-		if err := db.RowsToXlsx(rows, tmpfile.Name()); err != nil {
-			http.Error(w, "failed to generate XLSX: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-		w.Header().Set("Content-Disposition", "attachment; filename=export_"+time.Now().Format("20060102-150405")+".xlsx")
-
-		if _, err := io.Copy(w, tmpfile); err != nil {
-			http.Error(w, "Unable to copy file", http.StatusInternalServerError)
-			return
-		}
-		if _, err := io.Copy(w, tmpfile); err != nil {
+		if err := s.Exporter.ExportXLSX(w, rows); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

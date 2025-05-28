@@ -115,6 +115,7 @@ const QryForm = {
                             },
                                 m("select[name=exportType][required]", { title: "choose file format to export to" },
                                     m("option", { value: "csv" }, ".csv file"),
+                                    m("option", { value: "json" }, ".json file"),
                                     m("option", { value: "xlsx" }, ".xlsx file"),
                                 ),
                                 m('input[name=conn][type="hidden"]', { value: App.conn }),

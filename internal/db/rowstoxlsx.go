@@ -32,8 +32,8 @@ func RowsToXlsx(rows *sql.Rows, path string) (err error) {
 	// Iterate over the rows from the query
 	for rows.Next() {
 		// Prepare a slice to hold the values from the query
-		values := make([]interface{}, len(cols))
-		valuePtrs := make([]interface{}, len(cols))
+		values := make([]any, len(cols))
+		valuePtrs := make([]any, len(cols))
 
 		// Create value pointers
 		for i := range values {

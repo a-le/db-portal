@@ -3,6 +3,7 @@
 ## v0.2.1-beta
 - **Code refactoring, cleanup and quality improvment**
 - **Add DB warmup when server start**
+- **Add json export**
 
 ## v0.2.0
 
