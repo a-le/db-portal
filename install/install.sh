@@ -9,20 +9,20 @@ if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
 fi
 
 echo "Downloading db-portal binary..."
-curl -LO https://github.com/a-le/db-portal/releases/download/v0.2.0/db-portal
+curl -LO https://github.com/a-le/db-portal/releases/download/v0.2.1/db-portal
 chmod +x db-portal
 
 echo "Downloading source archive..."
-curl -LO https://github.com/a-le/db-portal/archive/refs/tags/v0.2.0.tar.gz
+curl -LO https://github.com/a-le/db-portal/archive/refs/tags/v0.2.1.tar.gz
 
 echo "Extracting conf/ and web/ folders..."
-tar --extract --file=v0.2.0.tar.gz \
+tar --extract --file=v0.2.1.tar.gz \
   --wildcards \
   --strip-components=1 \
-  'db-portal-0.2.0/conf/*' 'db-portal-0.2.0/web/*'
+  'db-portal-0.2.1/conf/*' 'db-portal-0.2.1/web/*'
 
 echo "Cleaning up..."
-rm v0.2.0.tar.gz
+rm v0.2.1.tar.gz
 
 echo "Installation complete."
 echo "Run the app with: ./db-portal"

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.1
+- **Same as v0.2.1-beta, promoted to stable release**
+- **Update install scripts**
+
 ## v0.2.1-beta
 - **Code refactoring, cleanup and quality improvment**
 - **Add DB warmup when server start**
