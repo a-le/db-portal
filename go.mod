@@ -7,9 +7,9 @@ toolchain go1.24.3
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.34.0
 	github.com/dchest/jsmin v0.0.0-20220218165748-59f39799265f
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-sql-driver/mysql v1.8.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/joho/sqltocsv v0.0.0-20210428211105-a6d6801d59df
 	github.com/microsoft/go-mssqldb v1.7.2

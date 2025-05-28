@@ -10,7 +10,7 @@ import (
 
 	"db-portal/internal/internaldb"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -42,13 +42,12 @@ func Auth(connService *internaldb.Store, jwtSecretKey string) func(next http.Han
 			// Check for JWT token in the custom Authorization-Jwt header
 			jwtHeader := r.Header.Get("Authorization-Jwt")
 			if strings.HasPrefix(jwtHeader, "Bearer ") {
-				claims := &jwt.StandardClaims{}
+				claims := &jwt.RegisteredClaims{}
 
 				// Parse and verify the JWT token
 				token, err := jwt.ParseWithClaims(jwtHeader[len("Bearer "):], claims, func(token *jwt.Token) (interface{}, error) {
 					return []byte(jwtSecretKey), nil
 				})
-
 				if err == nil && token.Valid {
 					// Valid token; add username to context and proceed
 					ctx := context.WithValue(r.Context(), UserContextKey, claims.Subject)
@@ -96,9 +95,9 @@ func Auth(connService *internaldb.Store, jwtSecretKey string) func(next http.Han
 			}
 
 			// Create JWT token if Basic Auth is successful
-			claims := &jwt.StandardClaims{
+			claims := &jwt.RegisteredClaims{
 				Subject:   username,
-				ExpiresAt: time.Now().Add(jwtExpirationTime).Unix(),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtExpirationTime)),
 			}
 
 			token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

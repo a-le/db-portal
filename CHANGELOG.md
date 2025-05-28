@@ -4,6 +4,7 @@
 - **Code refactoring, cleanup and quality improvment**
 - **Add DB warmup when server start**
 - **Add json export**
+- **upgrade to github.com/golang-jwt/jwt/v5**
 
 ## v0.2.0
 
