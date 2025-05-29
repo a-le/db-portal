@@ -1,6 +1,6 @@
 package meta
 
-const Version = "0.2.1"
+const Version = "0.2.2-beta"
 const AppName = "db-portal"
 
 const JsPath = "./web/cmp"

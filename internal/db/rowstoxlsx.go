@@ -17,8 +17,8 @@ func RowsToXlsx(rows *sql.Rows, path string) (err error) {
 		return fmt.Errorf("failed to create sheet: %w", err)
 	}
 
-	var cols []string
-	if cols, err = rows.Columns(); err != nil {
+	cols, err := rows.Columns()
+	if err != nil {
 		return
 	}
 
@@ -49,26 +49,25 @@ func RowsToXlsx(rows *sql.Rows, path string) (err error) {
 		row := sheet.AddRow()
 
 		// Loop through each column and add the value to the cell
-		for _, val := range values {
+		for i := range cols {
 			cell := row.AddCell()
 
-			// Preserve the original type while writing to the cell
-			switch v := val.(type) {
-			case int64: // For integer types
+			switch v := values[i].(type) {
+			case int64:
 				cell.SetInt64(v)
-			case float64: // For float types
+			case float64:
 				cell.SetFloat(v)
-			case bool: // For boolean types
+			case bool:
 				cell.SetBool(v)
-			case []byte: // For text fields that are returned as []byte
+			case []byte:
 				cell.SetString(string(v))
-			case string: // For string types
+			case string:
 				cell.SetString(v)
-			case time.Time: // For time.Time (dates/timestamps)
+			case time.Time:
 				cell.SetDate(v)
 			case nil: // Handle NULL values by setting an empty cell
 			default: // Fallback to string representation for any other types
-				cell.SetString(fmt.Sprintf("%v", val))
+				cell.SetString(fmt.Sprintf("%v", v))
 			}
 		}
 	}

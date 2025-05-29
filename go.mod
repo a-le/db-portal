@@ -11,7 +11,6 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/jackc/pgx/v5 v5.6.0
-	github.com/joho/sqltocsv v0.0.0-20210428211105-a6d6801d59df
 	github.com/microsoft/go-mssqldb v1.7.2
 	github.com/nakagami/firebirdsql v0.9.11
 	github.com/ncruces/go-sqlite3 v0.19.0

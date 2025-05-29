@@ -119,12 +119,12 @@ func DQueryContext(ctx context.Context, conn Conn, query string, args []any, lim
 
 		row := make([]any, len(dResult.Cols))
 		for i := range dResult.Cols {
-			row[i] = values[i]
-
-			if conn.DBType == "mysql" {
-				if byteArray, ok := values[i].([]byte); ok {
-					row[i] = string(byteArray)
-				}
+			switch v := values[i].(type) {
+			case []byte:
+				// Convert byte slices to string for JSON compatibility
+				row[i] = string(v)
+			default:
+				row[i] = values[i]
 			}
 		}
 		dResult.Rows = append(dResult.Rows, row)
@@ -141,7 +141,7 @@ func DQueryContext(ctx context.Context, conn Conn, query string, args []any, lim
 		columnTypes, _ = rows.ColumnTypes()
 	}()
 
-	// Populate qResult.DatabaseType and qResult.GoScanType
+	// Populate qResult.DatabaseType
 	for i := range dResult.Cols {
 		if i < len(columnTypes) {
 			c := columnTypes[i]

@@ -11,6 +11,7 @@ func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.Context().Value(auth.UserContextKey).(string)
 	conname := r.FormValue("conn")
 	exportType := r.FormValue("exportType")
+	gz := r.FormValue("gz")
 	query := r.FormValue("query")
 	s.CommandsConfig.Reload()
 
@@ -49,17 +50,22 @@ func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch exportType {
 	case "csv":
-		if err := s.Exporter.ExportCSV(w, rows); err != nil {
+		if err := s.Exporter.ExportCSV(w, rows, gz == "on"); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	case "json":
-		if err := s.Exporter.ExportJSON(w, rows); err != nil {
+		if err := s.Exporter.ExportJSON(w, rows, gz == "on"); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	case "jsoncompact":
+		if err := s.Exporter.ExportJSONcompact(w, rows, gz == "on"); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	case "xlsx":
-		if err := s.Exporter.ExportXLSX(w, rows); err != nil {
+		if err := s.Exporter.ExportXLSX(w, rows, gz == "on"); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

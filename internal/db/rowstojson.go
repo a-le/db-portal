@@ -3,15 +3,27 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"io"
+	"os"
 )
 
-func RowsToJson(rows *sql.Rows) (jsonData []byte, err error) {
+// RowsToJson writes the result set from rows as a JSON array of objects to the given file.
+// Each row is encoded as a JSON object with column names as keys.
+// []byte values are converted to strings for JSON compatibility.
+// The output is a valid JSON array, suitable for large result sets as it streams rows directly to the file.
+func RowsToJson(rows *sql.Rows, file *os.File) (err error) {
 	cols, err := rows.Columns()
 	if err != nil {
 		return
 	}
 
-	result := make([]map[string]any, 0)
+	encoder := json.NewEncoder(file)
+	_, err = file.Write([]byte("["))
+	if err != nil {
+		return err
+	}
+
+	first := true
 	for rows.Next() {
 		values := make([]any, len(cols))
 		valuePtrs := make([]any, len(cols))
@@ -24,17 +36,30 @@ func RowsToJson(rows *sql.Rows) (jsonData []byte, err error) {
 
 		rowMap := make(map[string]any, len(cols))
 		for i, c := range cols {
-			v := values[i]
-			if b, ok := v.([]byte); ok {
-				rowMap[c] = string(b) // Convert byte slices to strings
-			} else {
-				rowMap[c] = v // Keep other types as is
+			switch v := values[i].(type) {
+			case []byte:
+				rowMap[c] = string(v)
+			default:
+				rowMap[c] = v
 			}
 		}
-		result = append(result, rowMap)
+
+		if !first {
+			if _, err := file.Write([]byte(",")); err != nil {
+				return err
+			}
+		}
+		first = false
+
+		if err := encoder.Encode(rowMap); err != nil {
+			return err
+		}
 	}
 
-	jsonData, err = json.Marshal(result)
+	if !first {
+		file.Seek(-1, io.SeekCurrent) // Remove the newline added by encoder.
+	}
+	_, err = file.Write([]byte("]")) // Close the JSON array
 
 	return
 }
