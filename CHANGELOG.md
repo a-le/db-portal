@@ -1,12 +1,13 @@
 # Changelog
 
-## v0.2.2-beta
+## v0.2.2-beta **rolling release**
 - **JSON export now writes to a temporary file instead of processing in memory**
 - **CSV export no longer relies on external dependencies**
 - **CSV export now writes to a temporary file instead of streaming directly**
 - **Added JSON compact export compatible with ClickHouse JSONCompact format**
 - **Refactored export logic for all supported formats**
 - **Added gzip compression option for export downloads**
+- **Code refactoring, cleanup and quality improvment**
 
 ## v0.2.1
 - **Same as v0.2.1-beta, promoted to stable release**

@@ -6,17 +6,16 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"time"
 )
 
-// RowsToJsonCompact writes the result set from rows to the given file in ClickHouse JSONCompact format.
-// The output includes a "meta" section with column names and types, a "data" array with each row as a JSON array,
+// RowsToJsonCompact exports the result set from rows to the specified file in ClickHouse JSONCompact format.
+// The output contains a "meta" section with column names and types, a "data" array where each row is a JSON array,
 // and summary fields such as "rows", "rows_before_limit_at_least", and "statistics".
-// Column types are inferred from the database driver and the first row of data.
-// []byte values are converted to strings for JSON compatibility.
-// The function streams data directly to the file, making it suitable for large result sets.
-// see https://clickhouse.com/docs/interfaces/formats/JSONCompact
-// beta. needs some extensive tests
+// Column types are determined from the database driver when available, or inferred from the first row of data for unknown types.
+// Type mapping is basic. []byte values are converted to strings for JSON compatibility.
+// Data is streamed directly to the file, making this function suitable for large result sets.
+// See: https://clickhouse.com/docs/interfaces/formats/JSONCompact
+// Note: This is a beta implementation and requires thorough testing.
 func RowsToJsonCompact(rows *sql.Rows, file *os.File) error {
 	cols, err := rows.Columns()
 	if err != nil {
@@ -30,8 +29,16 @@ func RowsToJsonCompact(rows *sql.Rows, file *os.File) error {
 
 	colTypes := make([]string, len(cols))
 	for i, ct := range columnTypes {
-		// ScanType may return an empty interface for unsupported drivers
-		colTypes[i] = scanTypeToClickhouseType(ct.ScanType())
+		if ct.ScanType() == nil {
+			colTypes[i] = ""
+			continue
+		}
+		switch ct.ScanType().String() {
+		case "interface{}", "interface {}":
+			colTypes[i] = ""
+		default:
+			colTypes[i] = goTypeToExportType(ct.ScanType().String())
+		}
 	}
 
 	rowCount := 0
@@ -58,10 +65,16 @@ func RowsToJsonCompact(rows *sql.Rows, file *os.File) error {
 				values[i] = string(v)
 			}
 		}
-		// On first row, update colTypes and write meta
+		// On first row, update unknown colTypes and write meta
 		if rowCount == 0 {
 			for i, v := range values {
-				colTypes[i] = goTypeToClickhouseType(v)
+				if colTypes[i] == "" {
+					if reflect.TypeOf(v) == nil {
+						colTypes[i] = ""
+					} else {
+						colTypes[i] = goTypeToExportType(reflect.TypeOf(v).String())
+					}
+				}
 			}
 			if err := writeMetaSection(file, cols, colTypes); err != nil {
 				return err
@@ -88,6 +101,18 @@ func RowsToJsonCompact(rows *sql.Rows, file *os.File) error {
 		rowCount++
 	}
 
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error reading rows: %w", err)
+	}
+
+	if rowCount == 0 {
+		for i := range colTypes {
+			if colTypes[i] == "" {
+				colTypes[i] = "Nullable(String)"
+			}
+		}
+	}
+
 	// If there were no rows, still need to write meta and data
 	if !wroteMeta {
 		if err := writeMetaSection(file, cols, colTypes); err != nil {
@@ -111,66 +136,6 @@ func RowsToJsonCompact(rows *sql.Rows, file *os.File) error {
 	return nil
 }
 
-// Helper to map reflect.Type to ClickHouse type (used for initial colTypes)
-func scanTypeToClickhouseType(t reflect.Type) string {
-	if t == nil {
-		return "String"
-	}
-	switch t.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return "Int64"
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return "UInt64"
-	case reflect.Float32, reflect.Float64:
-		return "Float64"
-	case reflect.Bool:
-		return "Bool"
-	case reflect.String:
-		return "String"
-	case reflect.Slice:
-		if t.Elem().Kind() == reflect.Uint8 {
-			return "String" // []byte
-		}
-		return "Array(String)"
-	case reflect.Struct:
-		if t.PkgPath() == "time" && t.Name() == "Time" {
-			return "DateTime"
-		}
-	}
-	return "String"
-}
-
-// goTypeToClickhouseType maps Go types to ClickHouse types (basic mapping)
-func goTypeToClickhouseType(v any) string {
-	switch v := v.(type) {
-	case nil:
-		return "Nullable(String)"
-	case int, int8, int16, int32, int64:
-		return "Int64"
-	case uint, uint8, uint16, uint32, uint64:
-		return "UInt64"
-	case float32, float64:
-		return "Float64"
-	case bool:
-		return "Bool"
-	case string:
-		return "String"
-	case time.Time:
-		return "DateTime"
-	case []byte:
-		return "String"
-	case []any:
-		return "Array(String)"
-	default:
-		// Try to detect slice/array
-		rv := reflect.ValueOf(v)
-		if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {
-			return "Array(String)"
-		}
-		return "String"
-	}
-}
-
 // Helper to write the meta section
 func writeMetaSection(file *os.File, cols, colTypes []string) error {
 	metaBuf := []byte(`"meta":[`)
@@ -179,10 +144,84 @@ func writeMetaSection(file *os.File, cols, colTypes []string) error {
 			metaBuf = append(metaBuf, ',')
 		}
 		meta := map[string]string{"name": col, "type": colTypes[i]}
-		b, _ := json.Marshal(meta)
+		b, err := json.Marshal(meta)
+		if err != nil {
+			return fmt.Errorf("failed to marshal meta for column %s: %w", col, err)
+		}
 		metaBuf = append(metaBuf, b...)
 	}
 	metaBuf = append(metaBuf, "],"...)
 	_, err := file.Write(metaBuf)
 	return err
+}
+
+func goTypeToExportType(goType string) string {
+	switch goType {
+	case "bool":
+		return "Nullable(Bool)"
+	case "[]bool":
+		return "Array(Bool)"
+	case "[]byte":
+		return "Nullable(String)"
+	case "float32":
+		return "Nullable(Float32)"
+	case "[]float32":
+		return "Array(Float32)"
+	case "float64":
+		return "Nullable(Float64)"
+	case "[]float64":
+		return "Array(Float64)"
+	case "int":
+		return "Nullable(Int64)"
+	case "[]int":
+		return "Array(Int64)"
+	case "int16":
+		return "Nullable(Int16)"
+	case "[]int16":
+		return "Array(Int16)"
+	case "int32":
+		return "Nullable(Int32)"
+	case "[]int32":
+		return "Array(Int32)"
+	case "int64":
+		return "Nullable(Int64)"
+	case "[]int64":
+		return "Array(Int64)"
+	case "int8":
+		return "Nullable(Int8)"
+	case "[]int8":
+		return "Array(Int8)"
+	case "string":
+		return "Nullable(String)"
+	case "[]string":
+		return "Array(String)"
+	case "time.Time":
+		return "Nullable(DateTime)"
+	case "[]time.Time":
+		return "Array(DateTime)"
+	case "uint":
+		return "Nullable(UInt64)"
+	case "[]uint":
+		return "Array(UInt64)"
+	case "uint16":
+		return "Nullable(UInt16)"
+	case "[]uint16":
+		return "Array(UInt16)"
+	case "uint32":
+		return "Nullable(UInt32)"
+	case "[]uint32":
+		return "Array(UInt32)"
+	case "uint64":
+		return "Nullable(UInt64)"
+	case "[]uint64":
+		return "Array(UInt64)"
+	case "uint8":
+		return "Nullable(UInt8)"
+	case "[]uint8":
+		return "Array(UInt8)"
+	case "[]interface {}":
+		return "Array(String)"
+	default:
+		return "Nullable(String)"
+	}
 }

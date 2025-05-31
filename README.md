@@ -44,8 +44,8 @@ Alternatively, you can clone the full repository and build your own executable.
 ## Roadmap
 - codebase reorganization and quality improvements (ongoing and almost done)
 - add tests for export formats
-- file import
 - Support SQL scripts via CLI tools
+- file import
 - Load and save query/script files
 - Enhance data dictionary functionality
 - Act as a http DB proxy

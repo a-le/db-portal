@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"database/sql"
+	"db-portal/internal/types"
+
 	"fmt"
 	"sync"
 
@@ -18,23 +20,23 @@ import (
 // Conn is a wrapper around *sql.Conn
 type Conn struct {
 	*sql.Conn
-	DBType string
-	Driver string
+	DBVendor types.DBVendor
+	Driver   string
 }
 
-func DriverName(dbType string) (driverName string, err error) {
-	Drivers := map[string]string{
-		"clickhouse": "clickhouse",
-		"firebird":   "firebirdsql",
-		"mysql":      "mysql",
-		"mariadb":    "mysql",
-		"mssql":      "sqlserver",
-		"postgresql": "pgx",
-		"sqlite3":    "sqlite3",
+func DriverName(dbVendor types.DBVendor) (driverName string, err error) {
+	Drivers := map[types.DBVendor]string{
+		types.DBVendorClickHouse: "clickhouse",
+		types.DBVendorFirebird:   "firebirdsql",
+		types.DBVendorMySQL:      "mysql",
+		types.DBVendorMariaDB:    "mysql",
+		types.DBVendorMSSQL:      "sqlserver",
+		types.DBVendorPostgres:   "pgx",
+		types.DBVendorSQLite:     "sqlite3",
 	}
-	driverName = Drivers[dbType]
+	driverName = Drivers[dbVendor]
 	if driverName == "" {
-		err = fmt.Errorf("unknown database type: %s", dbType)
+		err = fmt.Errorf("unknown database type: %s", dbVendor)
 	}
 	return
 }
@@ -46,14 +48,14 @@ var dbCache = struct {
 }{dbs: make(map[string]*sql.DB)}
 
 // GetConn returns a connection from dbCache with useCache = true, else it returns a new connection.
-func GetConn(DBType string, DSN string, useCache bool) (conn Conn, err error) {
+func GetConn(dbVendor types.DBVendor, DSN string, useCache bool) (conn Conn, err error) {
 
 	var driverName string
-	if driverName, err = DriverName(DBType); err != nil {
+	if driverName, err = DriverName(dbVendor); err != nil {
 		return
 	}
 
-	conn.DBType = DBType
+	conn.DBVendor = dbVendor
 	conn.Driver = driverName
 
 	var db *sql.DB
@@ -61,7 +63,7 @@ func GetConn(DBType string, DSN string, useCache bool) (conn Conn, err error) {
 	if useCache {
 		dbCache.Lock()
 		defer dbCache.Unlock()
-		db, cacheHit = dbCache.dbs[fmt.Sprintf("%s:%s", DBType, DSN)]
+		db, cacheHit = dbCache.dbs[fmt.Sprintf("%s:%s", dbVendor, DSN)]
 	}
 
 	// Open a new database connection pool
@@ -81,14 +83,14 @@ func GetConn(DBType string, DSN string, useCache bool) (conn Conn, err error) {
 	if err != nil {
 		if cacheHit {
 			db.Close()
-			delete(dbCache.dbs, fmt.Sprintf("%s:%s", DBType, DSN))
+			delete(dbCache.dbs, fmt.Sprintf("%s:%s", dbVendor, DSN))
 		}
 		return
 	}
 
 	if useCache && !cacheHit {
 		// put the database connection pool in cache
-		dbCache.dbs[fmt.Sprintf("%s:%s", DBType, DSN)] = db
+		dbCache.dbs[fmt.Sprintf("%s:%s", dbVendor, DSN)] = db
 	}
 
 	return

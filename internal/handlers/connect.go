@@ -26,7 +26,7 @@ func (s *Services) ConnectHandler(w http.ResponseWriter, r *http.Request) {
 	// try to get conn from DB server
 	var conn db.Conn
 	var dResult db.DResult
-	if conn, dResult.DBerror = db.GetConn(connDetails.DBType, connDetails.DSN, true); dResult.DBerror == nil {
+	if conn, dResult.DBerror = db.GetConn(connDetails.DBVendor, connDetails.DSN, true); dResult.DBerror == nil {
 		conn.Close()
 	}
 

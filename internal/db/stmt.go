@@ -1,6 +1,7 @@
 package db
 
 import (
+	"db-portal/internal/types"
 	"regexp"
 	"slices"
 	"strings"
@@ -79,13 +80,13 @@ func stmtCmd(sql string) string {
 	return sql
 }
 
-func StmtInfos(sql string, dbType string) (infos infos) {
+func StmtInfos(sql string, dbVendor types.DBVendor) (infos infos) {
 	sql = stmtClean(strings.ToLower(sql))
 	infos.Cmd = stmtCmd(sql)
 
 	if slices.Contains([]string{"insert", "update", "delete", "drop", "alter", "create"}, infos.Cmd) {
 		var r *regexp.Regexp
-		if dbType == "mssql" {
+		if dbVendor == "mssql" {
 			r = regexp.MustCompile(`[\s](output)[\s]`)
 		} else {
 			r = regexp.MustCompile(`[\s](returning)[\s]`)

@@ -23,7 +23,7 @@ func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get DB connection
-	conn, err := db.GetConn(connDetails.DBType, connDetails.DSN, false)
+	conn, err := db.GetConn(connDetails.DBVendor, connDetails.DSN, false)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -33,7 +33,7 @@ func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
 	// Set schema if provided
 	schema := r.FormValue("schema")
 	if schema != "" {
-		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", connDetails.DBType, []string{schema})
+		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", connDetails.DBVendor, []string{schema})
 		if _, err := db.ExecContext(conn, setSchema, args); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -3,15 +3,13 @@ package internaldb
 import (
 	"database/sql"
 	"db-portal/internal/meta"
+	"db-portal/internal/types"
 	"os"
 	"path/filepath"
 
 	_ "github.com/ncruces/go-sqlite3/driver" // sqlite3 driver for internal config storage
 	"golang.org/x/crypto/bcrypt"
 )
-
-//type contextKey string
-//const UserContextKey = contextKey("username")
 
 type Store struct {
 	DBPath string
@@ -45,15 +43,15 @@ func (s *Store) WarmUp() error {
 
 // ConnDetails holds the result of the query.
 type ConnDetails struct {
-	DBType string
-	DSN    string
+	DBVendor types.DBVendor
+	DSN      string
 }
 
 // FetchConn retrieves the dbtype and dsn for a given user and connection name.
 func (s *Store) FetchConn(username, name string) (ConnDetails, error) {
 
 	if name == "db-portal" {
-		return ConnDetails{DBType: "sqlite3", DSN: s.DBPath}, nil
+		return ConnDetails{DBVendor: "sqlite3", DSN: s.DBPath}, nil
 	}
 
 	query := `
@@ -64,7 +62,7 @@ func (s *Store) FetchConn(username, name string) (ConnDetails, error) {
         where      u.name = ? 
           and      c.name = ?`
 	var details ConnDetails
-	err := s.DB.QueryRow(query, username, name).Scan(&details.DBType, &details.DSN)
+	err := s.DB.QueryRow(query, username, name).Scan(&details.DBVendor, &details.DSN)
 	return details, err
 }
 

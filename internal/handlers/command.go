@@ -33,7 +33,7 @@ func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
 
 	// get DB connection
 	var conn db.Conn
-	conn, dResult.DBerror = db.GetConn(connDetails.DBType, connDetails.DSN, true)
+	conn, dResult.DBerror = db.GetConn(connDetails.DBVendor, connDetails.DSN, true)
 	if dResult.DBerror != nil {
 		response.SendJSON(&dResult, w)
 		return
@@ -43,10 +43,10 @@ func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
 	// Set the schema if specified.
 	// Then, defer a query to restore the schema to the default before the connection is returned to the DB pool.
 	if schema != "" {
-		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", connDetails.DBType, []string{schema})
-		setSchemaDefault, _, _ := s.CommandsConfig.Data.Command("set-schema-default", connDetails.DBType, []string{})
+		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", connDetails.DBVendor, []string{schema})
+		setSchemaDefault, _, _ := s.CommandsConfig.Data.Command("set-schema-default", connDetails.DBVendor, []string{})
 		if setSchemaDefault == "" {
-			http.Error(w, fmt.Sprintf("a 'set schema' command was defined, but the 'set-schema-default' command is empty. Driver is %s\n", connDetails.DBType), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("a 'set schema' command was defined, but the 'set-schema-default' command is empty. Driver is %s\n", connDetails.DBVendor), http.StatusInternalServerError)
 			return
 		}
 		if _, err = db.ExecContext(conn, setSchema, args); err != nil {
@@ -70,14 +70,14 @@ func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
 	var command string
 	var args []any
 
-	if command, args, err = s.CommandsConfig.Data.Command(commandName, connDetails.DBType, urlArgs); err != nil {
+	if command, args, err = s.CommandsConfig.Data.Command(commandName, connDetails.DBVendor, urlArgs); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// send response if command is not implemented
 	if command == "" {
-		dResult.DBerror = fmt.Errorf("command <%v> is not supported for %v", commandName, connDetails.DBType)
+		dResult.DBerror = fmt.Errorf("command <%v> is not supported for %v", commandName, connDetails.DBVendor)
 		response.SendJSON(&dResult, w)
 		return
 	}

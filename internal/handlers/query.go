@@ -24,7 +24,7 @@ func (s *Services) QueryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get conn
-	conn, err := db.GetConn(connDetails.DBType, connDetails.DSN, false)
+	conn, err := db.GetConn(connDetails.DBVendor, connDetails.DSN, false)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -33,7 +33,7 @@ func (s *Services) QueryHandler(w http.ResponseWriter, r *http.Request) {
 
 	// set schema
 	if schema := r.FormValue("schema"); schema != "" {
-		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", connDetails.DBType, []string{schema})
+		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", connDetails.DBVendor, []string{schema})
 		if _, err = db.ExecContext(conn, setSchema, args); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -44,19 +44,19 @@ func (s *Services) QueryHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Build explain query
 	if r.FormValue("explain") == "1" {
-		command, _, err := s.CommandsConfig.Data.Command("explain", connDetails.DBType, []string{})
+		command, _, err := s.CommandsConfig.Data.Command("explain", connDetails.DBVendor, []string{})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		if command == "" {
 			dResult := db.DResult{}
-			dResult.DBerror = fmt.Errorf("explain command is not supported for the %v database", connDetails.DBType)
+			dResult.DBerror = fmt.Errorf("explain command is not supported for the %v database", connDetails.DBVendor)
 			response.SendJSON(&dResult, w)
 			return
 		}
 
-		if connDetails.DBType == "mssql" {
+		if connDetails.DBVendor == "mssql" {
 			_, err = db.ExecContext(conn, command, []any{})
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -68,7 +68,7 @@ func (s *Services) QueryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// infer statement type (query or not query) and command (select, insert, update, delete, etc.)
-	stmtInfos := db.StmtInfos(query, connDetails.DBType)
+	stmtInfos := db.StmtInfos(query, connDetails.DBVendor)
 
 	// execute query
 	var dResult db.DResult
