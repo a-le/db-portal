@@ -12,7 +12,8 @@ Regroup and manage connections to DB and give your users access to them.
 - Multi-database support : Clickhouse, Firebird, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite
 - Install locally (single-user) or on a server (multi-user) with HTTPS support
 - Cross-platform support: Windows, Linux, and other OSes supported by Go
-- Export data to `.csv`, `.xlsx`, `.json` (2 variants) and optionnaly gzipped files
+- Export query results to `.csv`, `.xlsx`, `.json` (JSON array of objects or Clickhouse JSON compact)
+- Add option to gzip export
 - View query results in an smart html table
 - Adapt data dict UI to your needs by simply editing sql commands (see conf/commands.yaml)
 
@@ -42,10 +43,11 @@ powershell -File install.ps1
 Alternatively, you can clone the full repository and build your own executable.
 
 ## Roadmap
-- codebase reorganization and quality improvements (ongoing and almost done)
-- add tests for export formats
+- codebase reorganization and quality improvements
+- add tests
+- file import (csv... ) to existing table or new auto-created table
+- table import/export (definition + data)
 - Support SQL scripts via CLI tools
-- file import
 - Load and save query/script files
 - Enhance data dictionary functionality
 - Act as a http DB proxy
