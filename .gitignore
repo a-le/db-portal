@@ -4,3 +4,5 @@
 db-portal
 db-portal.exe
 /.vscode/
+*_wip.go
+*_excl.go
