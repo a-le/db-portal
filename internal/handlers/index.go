@@ -1,13 +1,15 @@
 package handlers
 
 import (
-	"db-portal/internal/auth"
 	"db-portal/internal/jsminifier"
 	"db-portal/internal/meta"
+	"db-portal/internal/security"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/gorilla/csrf"
 )
 
 func (s *Services) IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +33,11 @@ func (s *Services) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		cssInfo, _ := os.Stat("./web/style.css")
 		jsCode := `<script>const versionInfo = { js: '%d', css: '%d', server: '%s', appName: '%s' };const username = '%s';</script>`
-		js := fmt.Sprintf(jsCode, jsInfos.ModTime().Unix(), cssInfo.ModTime().Unix(), meta.Version, meta.AppName, r.Context().Value(auth.UserContextKey).(string))
+		js := fmt.Sprintf(jsCode, jsInfos.ModTime().Unix(), cssInfo.ModTime().Unix(), meta.Version, meta.AppName, r.Context().Value(security.UserContextKey).(string))
 		html = strings.Replace(string(data), "{{.js}}", js, 1)
+
+		// Add CSRF token
+		html = strings.Replace(html, "{{.csrfToken}}", csrf.Token(r), 1)
 	}
 
 	w.Header().Set("Content-Type", "text/html")

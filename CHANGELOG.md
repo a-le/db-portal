@@ -1,13 +1,18 @@
 # Changelog
 
 ## v0.2.2-beta **rolling release**
+- **Code refactoring, cleanup and quality improvment**
 - **JSON export now writes to a temporary file instead of processing in memory**
 - **CSV export no longer relies on external dependencies**
 - **CSV export now writes to a temporary file instead of streaming directly**
 - **Added JSON compact export compatible with ClickHouse JSONCompact format**
 - **Refactored export logic for all supported formats**
 - **Added gzip compression option for export downloads**
-- **Code refactoring, cleanup and quality improvment**
+- **Security improvements:**
+  - Added CSRF protection to all routes (using gorilla/csrf).
+  - Hardened HTTP security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection).
+  - Improved CORS configuration for safer cross-origin requests.
+  - Replaced legacy session cookies with secure, HTTP-only cookies for JWT-based authentication.
 
 ## v0.2.1
 - **Same as v0.2.1-beta, promoted to stable release**

@@ -8,6 +8,7 @@ const QryForm = {
     xhr: null,
     executing: false,
     callError: false,
+    selectedFileName: "",
     reset: () => {
         QryForm.query = "";
         QryForm.resp = null;
@@ -34,7 +35,8 @@ const QryForm = {
         m.request({
             method: "POST",
             url: "/api/query",
-            headers: getRequestHeaders(),
+            credentials: "include",
+            headers: getRequestHeaders(formData),
             extract: getRequestExtract(),
             config: function (xhr) {
                 QryForm.xhr = xhr;
@@ -94,33 +96,34 @@ const QryForm = {
                     m("div[id=qryFormMenu]", { style: "padding: 0 6px;" },
                         m("fieldset",
                             m("legend", "download result"),
-                            /* it uses a classic form to permit file download */
+                            /* it uses a classic form to permit file download for best browser memory usage */
                             m("form", {
                                 method: "POST",
                                 action: "/api/export",
-                                target: "exportPopup",
+                                target: "exportpage",
                                 onsubmit: (e) => {
-                                    //QryForm.disableSubmit = true;
                                     let query = QryForm.editor.getCode();
                                     e.target.elements["query"].value = query;
                                     if (query.trim() === "") return false;
-                                    // open a popup window for the form's target
-                                    let popup = window.open('', 'exportPopup', 'width=600,height=400');
-                                    let content = '<html><head><title>Export in progress</title><meta name="color-scheme" content="light dark"></head>'
-                                        + '<body><h2>Processing your export...</h2><button type=button onclick=window.close()>Close</button></body></html>';
-                                    popup.document.write(content);
-                                    popup.onload = () => { popup.close(); }; // may not work
+
+                                    // Add CSRF token to form
+                                    const csrfInput = document.createElement('input');
+                                    csrfInput.type = 'hidden';
+                                    csrfInput.name = '_csrf';
+                                    csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                    e.target.appendChild(csrfInput);
+
                                     return true; // let the browser continue form submission
                                 }
                             },
-                                m("select[name=exportType][required]", { title: "choose file format to export to" },
-                                    m("option", { value: "csv" }, ".csv file"),
-                                    m("option", { value: "json" }, ".json file"),
-                                    m("option", { value: "jsoncompact" }, ".json compact file"),
-                                    m("option", { value: "xlsx" }, ".xlsx file"),
+                                m("select[name=exportType][required].w-80", { title: "choose file format to export to" },
+                                    m("option", { value: "csv" }, ".csv"),
+                                    m("option", { value: "json" }, ".json"),
+                                    m("option", { value: "jsoncompact" }, ".json compact"),
+                                    m("option", { value: "xlsx" }, ".xlsx"),
                                 ),
                                 m("input[type=checkbox][name=gz][id=gz].ml-10"),
-                                m("label]", { for: "gz" }, ".gz compression"),
+                                m("label]", { for: "gz", title: "compress result with gzip" }, ".gz"),
                                 m('input[name=conn][type="hidden"]', { value: App.conn }),
                                 m('input[name=schema][type="hidden"]', { value: App.schema }),
                                 m('input[name=query][type="hidden"]'),
@@ -130,6 +133,44 @@ const QryForm = {
                                 }, m(DownloadIcon)),
                             ),
                         ),
+                        // m("fieldset",
+                        //     m("legend", "upload and import file"),
+                        //     m("form", {
+                        //         method: "POST",
+                        //         action: "/api/import",
+                        //         enctype: "multipart/form-data",
+                        //         target: "importPopup",
+                        //         onsubmit: (e) => {
+                        //             // open a popup window for the form's target
+                        //             let popup = window.open('', 'importPopup', 'width=600,height=400');
+                        //             let content = '<html><head><title>Import in progress</title><meta name="color-scheme" content="light dark"></head>'
+                        //                 + '<body><h2>Processing your import...</h2><button type=button onclick=window.close()>Close</button></body></html>';
+                        //             popup.document.write(content);
+                        //             return true; // let the browser continue form submission
+                        //         }
+                        //     },
+                        //         m("select[name=importType][required].w-80", { title: "choose file format to export to" },
+                        //             m("option", { value: "jsoncompact" }, ".json compact"),
+                        //         ),
+                        //         m("select[name=table]", { title: "choose table to import to" },
+                        //             m("option", { value: "" }, "auto"),
+                        //         ),
+                        //         m("label.custom-file-label.w-80.no-wrap", {title: QryForm.selectedFileName || "choose file to upload"}, [
+                        //             QryForm.selectedFileName || "file...",
+                        //             m('input[type=file][name=file][required]', {
+                        //                 style: { display: "none" },
+                        //                 onchange: (e) => {
+                        //                     QryForm.selectedFileName = e.target.files[0]?.name || "";
+                        //                 }
+                        //             })
+                        //         ]),
+                        //         m('input[name=conn][type="hidden"]', { value: App.conn }),
+                        //         m('input[name=schema][type="hidden"]', { value: App.schema }),
+                        //         m("button[type=submit].ml-10", {
+                        //             title: "upload table and import data",
+                        //         }, m(DownloadIcon)),
+                        //     ),
+                        // ),
                         m("div", { style: "float: right;" },
                             m("fieldset.ml-20",
                                 m("legend", "query"),

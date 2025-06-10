@@ -22,6 +22,8 @@
         <script>const versionInfo = { js: 'unix time', css: 'unix time', server: 'x.x.x', appname: 'cool name' }; const username = 'username';</script> 
     -->
     {{.js}}
+    <!-- Add CSRF token meta tag -->
+    <meta name="csrf-token" content="{{.csrfToken}}">
     <script>
         // page title
         document.title = versionInfo.appName;

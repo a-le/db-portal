@@ -8,8 +8,10 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.34.0
 	github.com/dchest/jsmin v0.0.0-20220218165748-59f39799265f
 	github.com/go-chi/chi/v5 v5.1.0
+	github.com/go-chi/cors v1.2.1
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/gorilla/csrf v1.7.3
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/microsoft/go-mssqldb v1.7.2
 	github.com/nakagami/firebirdsql v0.9.11
@@ -31,6 +33,7 @@ require (
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect

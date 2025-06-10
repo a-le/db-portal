@@ -316,8 +316,10 @@ label:has(+ button:disabled), label:has(+ select:disabled) {
 }
 
 label {
-  display: inline-block;
+  /* display: inline-block; */
+  display: inline-flex;
   padding: 0 4px;
+  cursor: pointer;
 }
 
 .datadict {
@@ -341,7 +343,7 @@ label {
   border: none;
 }
 
-input:not([type="checkbox"]):not([type="radio"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 textarea {
   width: 100%;
   padding: 5px 10px;
@@ -576,6 +578,14 @@ code {
   margin-left: 50px;
 }
 
+.w-80 {
+  width: 80px;
+}
+
+.no-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
 
 /* General styling for the switch container */
 .toggle-switch {

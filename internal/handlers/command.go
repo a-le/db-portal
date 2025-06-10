@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"context"
-	"db-portal/internal/auth"
 	"db-portal/internal/db"
 	"db-portal/internal/response"
+	"db-portal/internal/security"
 	"fmt"
 	"net/http"
 
@@ -14,7 +14,7 @@ import (
 // commands are defined in config/commands.jsonc
 // some commands do mot exists for some drivers
 func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Context().Value(auth.UserContextKey).(string)
+	username := r.Context().Value(security.UserContextKey).(string)
 	conname := chi.URLParam(r, "conn")
 	schema := chi.URLParam(r, "schema")
 	commandName := chi.URLParam(r, "command")

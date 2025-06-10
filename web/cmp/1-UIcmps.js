@@ -1,27 +1,3 @@
-const LogOut = {
-    view: () => {
-        return [
-            m("button[type=button].mb-5", {
-                title: "logout " + username,
-                onclick: function () {
-                    sessionStorage.removeItem("token");
-                    m.request({
-                        method: "GET",
-                        url: "/logout",
-                        user: "thisIsForLogout",
-                    }).catch(function (e) {
-                        if (e.code === 401) {
-                            console.log("User logged out.");
-                            m.route.set("/");
-                            window.location.reload();
-                        }
-                    })
-                }
-            }, "logout"),
-        ]
-    }
-}
-
 
 const ThemeSwitch = {
     view: () => {
@@ -355,22 +331,52 @@ function WaitingAnimation(vnode) {
     };
 }
 
-
-const getRequestHeaders = () => {
-    return sessionStorage.getItem("token") !== null ? {
-        "Authorization-Jwt": "Bearer " + sessionStorage.getItem("token")
-    } : {}
+const getRequestHeaders = (body) => {
+    const headers = {
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+    };
+    // todo: check following code
+    // Only set Content-Type for non-FormData bodies
+    if (!(body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
+    return headers;
 }
 
 const getRequestExtract = () => {
     return function (xhr) {
-        const token = xhr.getResponseHeader("Authorization-Jwt"); // Assuming server sends "Authorization: Bearer <token>" in headers
-        if (token) {
-            sessionStorage.setItem("token", token.split(" ")[1]); // Store the token without the "Bearer " prefix
+        // Check standard Authorization header
+        const token = xhr.getResponseHeader("Authorization");
+        if (token && token.startsWith("Bearer ")) {
+            sessionStorage.setItem("token", token.split(" ")[1]);
         }
-        return JSON.parse(xhr.responseText); // Continue to parse response as JSON
+        return JSON.parse(xhr.responseText);
     }
 }
+
+const LogOut = {
+    view: () => {
+        return [
+            m("button[type=button].mb-5", {
+                title: "logout " + username,
+                onclick: function () {
+                    m.request({
+                        method: "GET",
+                        url: "/logout",
+                        credentials: "include",  // Required for cookie operations
+                    }).catch(function (e) {
+                        if (e.code === 401) {
+                            console.log("User logged out.");
+                            m.route.set("/");
+                            window.location.reload();
+                        }
+                    })
+                }
+            }, "logout"),
+        ]
+    }
+}
+
 
 const DownloadIcon = {
   view: ({ attrs }) => {

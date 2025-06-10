@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"db-portal/internal/auth"
 	"db-portal/internal/response"
+	"db-portal/internal/security"
 	"net/http"
 )
 
 func (s *Services) CnxNamesHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Context().Value(auth.UserContextKey).(string)
+	username := r.Context().Value(security.UserContextKey).(string)
 
 	rows, err := s.Store.FetchUserConns(username)
 	if err != nil {

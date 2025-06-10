@@ -49,6 +49,7 @@ const DataDict = {
         return {
             method: "GET",
             url: "/api/command/:conn/:schema/:command",
+            credentials: "include",
             headers: getRequestHeaders(),
             extract: getRequestExtract(),
             params: { conn: App.conn, schema: App.schema, command: command, args: args },

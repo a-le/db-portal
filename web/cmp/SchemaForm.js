@@ -7,6 +7,9 @@ const SchemaForm = {
         m.request({
             method: "GET",
             url: "/api/command/:conn/:schema/:command",
+            credentials: "include",
+            headers: getRequestHeaders(),
+            extract: getRequestExtract(),
             params: { conn: App.conn, schema: App.schema, command: "schemas" }
         }).then(function (response) {
             SchemaForm.schemas = response;

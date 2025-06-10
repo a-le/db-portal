@@ -20,7 +20,8 @@ const QryExplain = {
         m.request({
             method: "POST",
             url: "/api/query",
-            headers: getRequestHeaders(),
+            credentials: "include",
+            headers: getRequestHeaders(formData),
             extract: getRequestExtract(),
             body: formData,
         }).then(function (response) {

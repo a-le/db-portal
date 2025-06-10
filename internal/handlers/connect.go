@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"db-portal/internal/auth"
 	"db-portal/internal/db"
 	"db-portal/internal/internaldb"
 	"db-portal/internal/response"
+	"db-portal/internal/security"
 	"fmt"
 	"net/http"
 
@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Services) ConnectHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Context().Value(auth.UserContextKey).(string) // Retrieve the username from the context
+	username := r.Context().Value(security.UserContextKey).(string) // Retrieve the username from the context
 	conname := chi.URLParam(r, "conn")
 	var err error
 

@@ -6,18 +6,18 @@ import (
 	"net/http"
 	"os"
 
-	"db-portal/internal/auth"
 	"db-portal/internal/config"
-	"db-portal/internal/export"
+	"db-portal/internal/datatransfer"
 	"db-portal/internal/handlers"
 	"db-portal/internal/internaldb"
+	"db-portal/internal/security"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-
 	// get config folder path
 	configPath, err := config.NewConfigPath(os.Args)
 	if err != nil {
@@ -46,6 +46,7 @@ func main() {
 	if err := serverConfig.Load(); err != nil {
 		log.Fatalf("error loading %s file: %s", serverConfig.Filename, err)
 	}
+	useHTTPS := serverConfig.Data.CertFile != "" && serverConfig.Data.KeyFile != ""
 
 	// load sql commands config file
 	commandsConfig := config.New[config.CommandsConfig](configPath + "/commands.yaml")
@@ -54,34 +55,50 @@ func main() {
 	}
 
 	// gen a random JWT secret key
-	jwtSecretKey := auth.RandomString(32)
+	jwtSecretKey := security.RandomString(32)
 
 	// initialize services for handlers
 	svcs := &handlers.Services{
 		Store:          store,
 		CommandsConfig: &commandsConfig,
 		ServerConfig:   &serverConfig,
-		Exporter:       &export.DefaultExporter{},
+		Exporter:       &datatransfer.DefaultExporter{},
 		JWTSecretKey:   jwtSecretKey,
 	}
 
 	r := chi.NewRouter()
+
+	// Setup security middleware (CSRF, CORS, etc.) globally
+	var allowedOrigins []string
+	if useHTTPS {
+		allowedOrigins = []string{"https://" + serverConfig.Data.Addr}
+	} else {
+		allowedOrigins = []string{"http://" + serverConfig.Data.Addr}
+	}
+	secConfig := security.NewSecurityConfig(store, jwtSecretKey, allowedOrigins)
+	secConfig.SetupSecurityMiddleware(r)
+
+	// Core middleware stack
 	r.Use(middleware.Logger)
+	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middleware.Compress(5, "text/html", "text/css", "application/json", "text/javascript"))
 
-	authMw := auth.Auth(store, jwtSecretKey) // auth middleware
+	// API routes with authentication
 	r.Route("/api", func(api chi.Router) {
-		api.Use(authMw)
+		api.Use(secConfig.Auth)
 
-		api.Get("/connect/{conn}", svcs.ConnectHandler)
-		api.Post("/export", svcs.ExportHandler)
-		api.Post("/query", svcs.QueryHandler)
-		api.Get("/command/{conn}/{schema}/{command}", svcs.CommandHandler)
 		api.Get("/config/cnxnames", svcs.CnxNamesHandler)
+		api.Get("/connect/{conn}", svcs.ConnectHandler)
+		api.Get("/command/{conn}/{schema}/{command}", svcs.CommandHandler)
+		api.Post("/query", svcs.QueryHandler)
+		api.Post("/export", svcs.ExportHandler)
+		//api.Post("/import", svcs.ImportHandler)
 		api.Get("/clockresolution", svcs.ClockResolutionHandler)
 	})
-	r.With(authMw).Get("/", svcs.IndexHandler)
-	r.With(authMw).Get("/logout", svcs.LogoutHandler)
+
+	// Public routes (no Auth)
+	r.With(secConfig.Auth).Get("/", svcs.IndexHandler)
+	r.With(secConfig.Auth).Get("/logout", svcs.LogoutHandler)
 	r.Get("/hash/{string}", svcs.HashHandler)
 	r.Handle("/web/*", svcs.StaticFileHandler())
 
@@ -92,17 +109,15 @@ func main() {
 	}
 
 	// start the server with HTTPS if cert and key files are provided, otherwise use HTTP
-	scd := serverConfig.Data
-	useHTTPS := scd.CertFile != "" && scd.KeyFile != ""
 	if useHTTPS {
 		fmt.Printf("server is listening at https://%s\n", httpServer.Addr)
-		if err := httpServer.ListenAndServeTLS(scd.CertFile, scd.KeyFile); err != nil {
+		if err := httpServer.ListenAndServeTLS(serverConfig.Data.CertFile, serverConfig.Data.KeyFile); err != nil {
 			log.Fatalf("server failed to start at https://%s: %v", httpServer.Addr, err)
 		}
 	} else {
 		fmt.Printf("server is listening at http://%s\n", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil {
-			log.Fatalf("server failed to start at https://%s: %v", httpServer.Addr, err)
+			log.Fatalf("server failed to start at http://%s: %v", httpServer.Addr, err)
 		}
 	}
 }

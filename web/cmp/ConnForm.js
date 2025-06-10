@@ -16,6 +16,7 @@ const ConnForm = {
             method: "GET",
             url: "/api/connect/:conn",
             params: { conn: conn },
+            credentials: "include",
             headers: getRequestHeaders(),
             extract: getRequestExtract(),
         }).then(function (response) {

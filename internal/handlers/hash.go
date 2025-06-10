@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"db-portal/internal/auth"
+	"db-portal/internal/security"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,5 +10,5 @@ import (
 // return a bcrypt hash of a string (useful for password hashing)
 // there is some salt in the hash, so the result will be different each time
 func (s *Services) HashHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(auth.HashPassword(chi.URLParam(r, "string"))))
+	w.Write([]byte(security.HashPassword(chi.URLParam(r, "string"))))
 }

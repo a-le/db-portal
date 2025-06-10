@@ -22,6 +22,7 @@ const ConnInfos = {
         return m.request({
             method: "GET",
             url: "/api/command/:conn/:schema/conn-infos",
+            credentials: "include",
             headers: getRequestHeaders(),
             extract: getRequestExtract(),
             params: { conn: App.conn, schema: App.schema },

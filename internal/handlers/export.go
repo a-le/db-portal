@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"db-portal/internal/auth"
 	"db-portal/internal/db"
+	"db-portal/internal/security"
 	"fmt"
 	"net/http"
 )
 
 func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Context().Value(auth.UserContextKey).(string)
+	username := r.Context().Value(security.UserContextKey).(string)
 	conname := r.FormValue("conn")
 	exportType := r.FormValue("exportType")
 	gz := r.FormValue("gz")
@@ -18,7 +18,7 @@ func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
 	// get connection details
 	connDetails, err := s.Store.FetchConn(username, conname)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("connection %v not found or not allowed", conname), http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("connection <%v> not found or not allowed for user <%v>", conname, username), http.StatusNotFound)
 		return
 	}
 
