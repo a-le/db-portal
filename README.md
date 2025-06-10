@@ -16,6 +16,7 @@ Regroup and manage connections to DB and give your users access to them.
 - Add option to gzip export
 - View query results in an smart html table
 - Adapt data dict UI to your needs by simply editing sql commands (see conf/commands.yaml)
+- see CHANGELOG.md for latest features added to rolling release
 
 ## Quick Installation
 
