@@ -25,11 +25,11 @@ Regroup and manage connections to DB and give your users access to them.
 
 ## Features
 - Query all your databases through a unified web interface in your browser
-- Supports the following databases: ClickHouse, Firebird, MySQL/MariaDB, MSSQL, PostgreSQL, and SQLite
+- Supports the following databases: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, and SQLite
 - Write SQL queries in a syntax-highlighted minimalist editor
 - View query results in a smart HTML table
 - Download results as `.csv`, `.xlsx`, or `.json` files, with optional gzip compression
-- Supports multiple JSON formats: standard array of objects and ClickHouse JSON compact
+- Supports multiple JSON formats: standard array of objects and compact tabular format (with "fields", "types", and "rows" keys)
 - Browse data dictionaries (tables, columns, views, procedures, etc.)
 
 - Implements industry-standard authentication and security practices
@@ -90,11 +90,11 @@ powershell -File install.ps1
 
 ## Roadmap
 - codebase reorganization and quality improvements
+- file import (csv, json, xlsx... ) to existing table
+- streamed data transfer into an existing table (can target a different DSN or database vendor)
 - Act as a http DB proxy for other apps
 - use github actions for CI
 - add tests
-- file import (csv... ) to existing table or new auto-created table
-- table import/export in some JSON format (with definition + data)
 - Support SQL scripts via CLI tools (psql, sqli etc...)
 - Load and save query/script files
 - Enhance data dictionary functionality

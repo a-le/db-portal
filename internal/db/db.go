@@ -12,9 +12,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"         // mysql/mariaDB driver
 	_ "github.com/jackc/pgx/v5/stdlib"         // PostgreSQL driver
 	_ "github.com/microsoft/go-mssqldb"        // mssql driver
-	_ "github.com/nakagami/firebirdsql"        // firebirdsql driver
-	_ "github.com/ncruces/go-sqlite3/driver"   // sqlite3 driver
-	_ "github.com/ncruces/go-sqlite3/embed"    // sqlite3 driver
+
+	//_ "github.com/nakagami/firebirdsql"        // firebirdsql driver
+	_ "github.com/ncruces/go-sqlite3/driver" // sqlite3 driver
+	_ "github.com/ncruces/go-sqlite3/embed"  // sqlite3 driver
 )
 
 // Conn is a wrapper around *sql.Conn
@@ -27,12 +28,12 @@ type Conn struct {
 func DriverName(dbVendor types.DBVendor) (driverName string, err error) {
 	Drivers := map[types.DBVendor]string{
 		types.DBVendorClickHouse: "clickhouse",
-		types.DBVendorFirebird:   "firebirdsql",
-		types.DBVendorMySQL:      "mysql",
-		types.DBVendorMariaDB:    "mysql",
-		types.DBVendorMSSQL:      "sqlserver",
-		types.DBVendorPostgres:   "pgx",
-		types.DBVendorSQLite:     "sqlite3",
+		//types.DBVendorFirebird:   "firebirdsql", // less supported and tested
+		types.DBVendorMySQL:    "mysql",
+		types.DBVendorMariaDB:  "mysql",
+		types.DBVendorMSSQL:    "sqlserver",
+		types.DBVendorPostgres: "pgx",
+		types.DBVendorSQLite:   "sqlite3",
 	}
 	driverName = Drivers[dbVendor]
 	if driverName == "" {

@@ -102,7 +102,7 @@ const App = {
                         title: "View github project page"
                     }, versionInfo.appName
                     ),
-                    m("span", m.trust(" &copy; 2024. Licensed under "),
+                    m("span", m.trust(" &copy; 2025. Licensed under "),
                         m("a", {
                             href: "https://www.gnu.org/licenses/agpl-3.0.html",
                             title: "View License",

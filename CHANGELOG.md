@@ -5,7 +5,7 @@
 - **JSON export now writes to a temporary file instead of processing in memory**
 - **CSV export no longer relies on external dependencies**
 - **CSV export now writes to a temporary file instead of streaming directly**
-- **Added JSON compact export compatible with ClickHouse JSONCompact format**
+- **Added JSON tabular export compatible**
 - **Refactored export logic for all supported formats**
 - **Added gzip compression option for export downloads**
 - **Security improvements:**
@@ -13,6 +13,7 @@
   - Hardened HTTP security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection).
   - Improved CORS configuration for safer cross-origin requests.
   - Replaced legacy session cookies with secure, HTTP-only cookies for JWT-based authentication.
+- **Drop Firebird support**
 
 ## v0.2.1
 - **Same as v0.2.1-beta, promoted to stable release**

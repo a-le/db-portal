@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"database/sql"
 	"db-portal/internal/db"
+	"db-portal/internal/types"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,17 +16,24 @@ type Exporter interface {
 	ExportCSV(w http.ResponseWriter, rows *sql.Rows, gz bool) error
 	ExportXLSX(w http.ResponseWriter, rows *sql.Rows, gz bool) error
 	ExportJSON(w http.ResponseWriter, rows *sql.Rows, gz bool) error
-	ExportJSONcompact(w http.ResponseWriter, rows *sql.Rows, gz bool) error
+	ExportJSONTabular(w http.ResponseWriter, rows *sql.Rows, gz bool) error
+	SetDBVendor(v types.DBVendor)
 }
 
-type DefaultExporter struct{}
+type DefaultExporter struct {
+	DBVendor types.DBVendor
+}
+
+func (e *DefaultExporter) SetDBVendor(v types.DBVendor) {
+	e.DBVendor = v
+}
 
 func (e *DefaultExporter) exportFile(
 	w http.ResponseWriter,
 	rows *sql.Rows,
 	ext string,
 	contentType string,
-	exportFunc func(*sql.Rows, *os.File) error,
+	exportFunc func(*sql.Rows, *os.File, types.DBVendor) error,
 	gzipEnabled bool,
 ) error {
 
@@ -36,7 +44,7 @@ func (e *DefaultExporter) exportFile(
 	defer os.Remove(tmpfile.Name())
 	defer tmpfile.Close()
 
-	if err := exportFunc(rows, tmpfile); err != nil {
+	if err := exportFunc(rows, tmpfile, e.DBVendor); err != nil {
 		return err
 	}
 
@@ -82,19 +90,28 @@ func (e *DefaultExporter) exportFile(
 }
 
 func (e *DefaultExporter) ExportCSV(w http.ResponseWriter, rows *sql.Rows, gz bool) error {
-	return e.exportFile(w, rows, "csv", "text/csv", db.RowsToCsv, gz)
+	exportFunc := func(rows *sql.Rows, file *os.File, _ types.DBVendor) error {
+		return db.RowsToCsv(rows, file)
+	}
+	return e.exportFile(w, rows, "csv", "text/csv", exportFunc, gz)
 }
 
 func (e *DefaultExporter) ExportJSON(w http.ResponseWriter, rows *sql.Rows, gz bool) error {
-	return e.exportFile(w, rows, "json", "application/json", db.RowsToJson, gz)
+	exportFunc := func(rows *sql.Rows, file *os.File, _ types.DBVendor) error {
+		return db.RowsToJson(rows, file)
+	}
+	return e.exportFile(w, rows, "json", "application/json", exportFunc, gz)
 }
 
-func (e *DefaultExporter) ExportJSONcompact(w http.ResponseWriter, rows *sql.Rows, gz bool) error {
-	return e.exportFile(w, rows, "json", "application/json", db.RowsToJsonCompact, gz)
+func (e *DefaultExporter) ExportJSONTabular(w http.ResponseWriter, rows *sql.Rows, gz bool) error {
+	exportFunc := func(rows *sql.Rows, file *os.File, dbVendor types.DBVendor) error {
+		return db.RowsToJsonTabular(rows, file, dbVendor)
+	}
+	return e.exportFile(w, rows, "json", "application/json", exportFunc, gz)
 }
 
 func (e *DefaultExporter) ExportXLSX(w http.ResponseWriter, rows *sql.Rows, gz bool) error {
-	exportFunc := func(rows *sql.Rows, file *os.File) error {
+	exportFunc := func(rows *sql.Rows, file *os.File, _ types.DBVendor) error {
 		return db.RowsToXlsx(rows, file.Name())
 	}
 	return e.exportFile(w, rows, "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", exportFunc, gz)

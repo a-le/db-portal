@@ -59,8 +59,9 @@ func (s *Services) ExportHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	case "jsoncompact":
-		if err := s.Exporter.ExportJSONcompact(w, rows, gz == "on"); err != nil {
+	case "jsontabular":
+		s.Exporter.SetDBVendor(connDetails.DBVendor)
+		if err := s.Exporter.ExportJSONTabular(w, rows, gz == "on"); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

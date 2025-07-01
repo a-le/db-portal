@@ -119,7 +119,7 @@ const QryForm = {
                                 m("select[name=exportType][required].w-80", { title: "choose file format to export to" },
                                     m("option", { value: "csv" }, ".csv"),
                                     m("option", { value: "json" }, ".json"),
-                                    m("option", { value: "jsoncompact" }, ".json compact"),
+                                    m("option", { value: "jsontabular" }, ".json tabular"),
                                     m("option", { value: "xlsx" }, ".xlsx"),
                                 ),
                                 m("input[type=checkbox][name=gz][id=gz].ml-10"),
