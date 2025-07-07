@@ -89,9 +89,8 @@ powershell -File install.ps1
 
 
 ## Roadmap
-- codebase reorganization and quality improvements
-- file import (csv, json, xlsx... ) to existing table
-- streamed data transfer into an existing table (can target a different DSN or database vendor)
+- Codebase reorganization and quality improvements
+- Data transfer/light ETL accross DB: file (CSV, XLSX, JSON) → DB table, DB table/query → DB table 
 - Act as a http DB proxy for other apps
 - use github actions for CI
 - add tests
