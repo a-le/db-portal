@@ -65,7 +65,7 @@ Regroup and manage connections to DB and give your users access to them.
 
 
 ## Quick Installation
-
+<!--
 1. **Run the install script**
 
 **Linux/macOS:**  
@@ -79,6 +79,8 @@ bash install.sh
 irm https://raw.githubusercontent.com/a-le/db-portal/main/install/install.ps1 -OutFile install.ps1
 powershell -File install.ps1
 ```
+-->
+1. For the time being, you should **build the app yourself** from source.
 
 2. **Open your browser and navigate to** [http://localhost:3000](http://localhost:3000)
 
