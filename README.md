@@ -85,7 +85,8 @@ powershell -File install.ps1
 1. For the time being, you should **build the app yourself** from source.
   With Go installed, `go build` in the source directory is all you need !
 
-2. run executable: `db-portal --set-master-password=your_password` (--set-master-password is only needed for the first run)
+2. Run executable: `db-portal --set-master-password=your_password`  
+<sub>--set-master-password argument is only needed on the first run, or if you need to reset password.</sub>
 
 3. **Open your browser and navigate to** [http://localhost:3000](http://localhost:3000)
 
