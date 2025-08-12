@@ -5,10 +5,12 @@
 
 
 `db-portal`
+## Project Description
+**db-portal** is a web application (SPA with REST APIs) for querying and managing SQL databases, providing both a backend server and a browser-based interface. for querying and managing SQL databases. 
+It supports multiple database engines (ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite, and more), allowing users to run SQL queries, browse data dictionaries, and export data with ease. The platform features a unified interface for ETL operations, enabling data copying between various sources and destinations, including databases and files (.json, .xlsx, .csv).
+db-portal is designed for both solo and multi-user environments. Regular users are restricted to the resources assigned to them, while administrators have full access to all connections and data sources. The application is highly configurable, secure (JWT authentication, HTTPS support), and lightweight, making it suitable for deployment on Windows, Linux, and other platforms supported by Go.
 
-**Description**: 
-Query all your SQL databases through a minimalist web interface, browse data dictionaries and export data.
-Regroup and manage connections to DB and give your users access to them.
+Whether you need a simple tool for personal database management or a multi-user solution for your team, db-portal provides a flexible and efficient way to interact.
 
 ## Demo (old v0.2.0 version)
 ![Loading animation](.github/demo.gif)
