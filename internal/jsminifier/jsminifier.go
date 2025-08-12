@@ -1,106 +1,100 @@
 package jsminifier
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/dchest/jsmin"
 )
 
-func getFolderModTime(folder string) (latestModTime time.Time, err error) {
-	fileList, err := filepath.Glob(filepath.Join(folder, "*.js"))
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	for _, filePath := range fileList {
-		fileInfo, err := os.Stat(filePath)
-		if err != nil {
-			return time.Time{}, err
-		}
-
-		if fileInfo.ModTime().After(latestModTime) {
-			latestModTime = fileInfo.ModTime()
-		}
-	}
-
-	return
+type JSMinifierStatus struct {
+	ManifestPath        string
+	MinifiedPath        string
+	SourceFiles         []string
+	LatestSourceModTime time.Time
+	MinifiedModTime     time.Time
+	Expired             bool
 }
 
-func getFileModTime(path string) (time.Time, error) {
-	info, err := os.Stat(path)
+func NewJSMinifyStatus(manifestPath string, jsMinPath string) (status JSMinifierStatus, err error) {
+	status.ManifestPath = manifestPath
+	status.MinifiedPath = jsMinPath
+
+	// Read manifest.json
+	manifestBytes, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return
+	}
+
+	// Parse JSON array of file paths
+	if err = json.Unmarshal(manifestBytes, &status.SourceFiles); err != nil {
+		return
+	}
+
+	// Find the most recent mod time among files
+	if len(status.SourceFiles) == 0 {
+		err = fmt.Errorf("%s should not be empty", status.ManifestPath)
+		return
+	}
+	for _, file := range status.SourceFiles {
+		file = "." + file // path is relative in server context
+		var info os.FileInfo
+		info, err = os.Stat(file)
+		if err != nil {
+			return
+		}
+		if info.ModTime().After(status.LatestSourceModTime) {
+			status.LatestSourceModTime = info.ModTime()
+		}
+	}
+
+	// Get mod time of jsMinPath
+	info, err := os.Stat(jsMinPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return time.Time{}, nil
+			// If min file doesn't exist, treat as expired
+			status.Expired = true
 		}
-		return time.Time{}, err
-	}
-	return info.ModTime(), nil
-}
-
-func minifyJSContent(jsContent []byte) ([]byte, error) {
-	minifiedContent, err := jsmin.Minify(jsContent)
-	if err != nil {
-		return nil, err
-	}
-	return minifiedContent, nil
-}
-
-type infos struct {
-	folderModTime time.Time
-	fileModTime   time.Time
-	Expired       bool
-}
-
-func (infos infos) ModTime() time.Time {
-	return infos.folderModTime
-}
-
-func GetInfos(folder string, filePath string) (infos infos, err error) {
-	infos.folderModTime, err = getFolderModTime(folder)
-	if err != nil {
 		return
 	}
-	infos.fileModTime, err = getFileModTime(filePath)
-	if err != nil {
-		return
-	}
-	infos.Expired = infos.folderModTime.After(infos.fileModTime)
+	status.MinifiedModTime = info.ModTime()
+
+	status.Expired = status.LatestSourceModTime.After(status.MinifiedModTime)
+
 	return
 }
 
-func Combinify(folder string, minFilePath string) error {
-
+func (status JSMinifierStatus) Combinify() (newStatus JSMinifierStatus, err error) {
+	newStatus = status
 	var combined []byte
-	var minified []byte
-
-	err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+	for _, file := range status.SourceFiles {
+		file = "." + file // path is relative in server context
+		var b []byte
+		b, err = os.ReadFile(file)
 		if err != nil {
-			return err
+			return
 		}
-		if filepath.Ext(path) == ".js" {
-			b, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			if len(combined) > 0 {
-				combined = append(combined, "\n"...)
-			}
-			combined = append(combined, b...)
+		if len(combined) > 0 {
+			combined = append(combined, "\n"...)
 		}
-		return nil
-	})
-
-	if err != nil {
-		return err
+		combined = append(combined, b...)
 	}
 
-	minified, err = minifyJSContent(combined)
+	var minified []byte
+	minified, err = jsmin.Minify(combined)
 	if err != nil {
-		return err
+		return
 	}
 
-	return os.WriteFile(minFilePath, minified, 0644)
+	if err = os.WriteFile(status.MinifiedPath, minified, 0644); err != nil {
+		return
+	}
+
+	info, _ := os.Stat(status.MinifiedPath)
+	newStatus.MinifiedModTime = info.ModTime()
+	newStatus.Expired = false
+
+	return
 }

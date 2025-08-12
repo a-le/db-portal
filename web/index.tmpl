@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!--
+    Any content enclosed by double curly braces, is a Go template variable.
+    These placeholders are replaced by the Go server with actual values before sending the HTML to the browser.
+    -->
+    <script>
+        document.title = "{{.AppName}}";
+        let versionInfo = {AppName: "{{.AppName}}", AppVersion: "{{.AppVersion}}"}
+
+        // load css
+        document.write(`<link rel="stylesheet" type="text/css" href="{{.CssScript}}?v={{.CssVersion}}">`);
+        //document.write(`<link rel="stylesheet" type="text/css" href="/web/prism.css">`);
+
+        // load js
+        let scripts = ["/web/mithril.min.js",
+                        {{.JsScripts}},
+                        "/web/codemirror.min.js",
+                        //"/web/prism.min.js"
+                        ];
+        scripts.forEach(
+            src => document.write(`<script src="${src}?v={{.JsVersion}}"><\/script>`)
+        );
+    </script>
+    <link rel="icon" type="image/png" sizes="16x16" href="/web/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/web/favicon-32x32.png">
+</head>
+
+<body>
+    <script>
+        m.mount(document.body, App);
+    </script>
+    <noscript>
+    <div>This application requires JavaScript. Please enable it in your browser settings.</div>
+    </noscript>
+</body>
+
+</html>

@@ -25,26 +25,28 @@ Regroup and manage connections to DB and give your users access to them.
 
 ## Features
 - Query all your databases through a unified web interface in your browser
-- Supports the following databases: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, and SQLite
+- Supports the following databases: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite and more to come.
 - Write SQL queries in a syntax-highlighted minimalist editor
 - View query results in a smart HTML table
-- Download results as `.csv`, `.xlsx`, or `.json` files, with optional gzip compression
-- Supports multiple JSON formats: standard array of objects and compact tabular format (with "fields", "types", and "rows" keys)
 - Browse data dictionaries (tables, columns, views, procedures, etc.)
 
-- Implements industry-standard authentication and security practices
-  - Server based with HTTPS support
-  - Secure authentication via HTTP Basic Auth and JWT
-  - CSRF protection, CORS configuration, secure HTTP headers, and HTTP-only cookies
+- ETL features
+  - Use a GUI for ETL operations. Set data sources as origin and destination, click submit and voilà ! 
+  - Data sources supported as source or destination: DB table, DB query, .json (2 formats supported), .xlsx, .csv 
 
 - Solo or multi-user support
-  - Solo: Simply add database connections (DSN), assign them to the `admin` user, and start querying.
-  - Multi-user: Add users and connections, then assign connections to specific users for controlled access.
+  - Solo: Simply add data sources (DSN), assign them to your user, and start using them.
+  - Multi-user: Add users and DSN, then assign DSN to specific users for controlled access.
+  - Regular users can only access the data sources and connections assigned to them, whereas admins have unrestricted access to all resources.
 
 - Configurable
   - Modify server configuration easily using a YAML file
-  - Manage users and database connections by executing SQL queries (no GUI or API yet)
+  - Manage users and data sources (only database DSN at the moment)
   - Customize the data dictionary UI by editing SQL commands in `conf/commands.yaml`
+
+- Implements industry-standard authentication and security practices
+  - Server based with HTTPS support
+  - Secure authentication via JWT
 
 - Developer friendly
   - No CGO required for building from source
@@ -52,9 +54,7 @@ Regroup and manage connections to DB and give your users access to them.
 
 - Light and efficient
   - Minimal CPU and memory usage
-  - File downloads are streamed and can be gzipped
   - Custom JavaScript and CSS using a lightweight virtual DOM library (Mithril.js)
-  - Executable is only ~30 MB, including all 6 supported database drivers
 
 - Cross-platform support: Windows, Linux, and other OSes supported by Go
 - **see [CHANGELOG.md](https://raw.githubusercontent.com/a-le/db-portal/main/CHANGELOG.md) for latest features added to rolling release**
@@ -81,27 +81,32 @@ powershell -File install.ps1
 ```
 -->
 1. For the time being, you should **build the app yourself** from source.
+  With Go installed, `go build` in the source directory is all you need !
 
-2. **Open your browser and navigate to** [http://localhost:3000](http://localhost:3000)
+2. run executable: `db-portal --set-master-password=your_password` (--set-master-password is only needed for the first run)
 
-3. **Log in with the `admin` user**  
-   Password: `admin`
+3. **Open your browser and navigate to** [http://localhost:3000](http://localhost:3000)
+
+4. **Log in with the `admin` user with the password set at step 2**  
 
 ---
 
 
-## Roadmap
-- Codebase reorganization and quality improvements
-- Data transfer/light ETL accross DB: file (CSV, XLSX, JSON) → DB table, DB table/query → DB table 
-- Act as a http DB proxy for other apps
+## Roadmap / upcoming / ideas
+- JS codebase reorganization and quality improvements
+- Improve integration of ETL / Data copy features
+- Add DuckDB support
+- Use DuckDB for ETL task of reading XLSX files ?
+- Support base folders as data source for files
+- Replace CodeMirror by Prism (syntax highligthning) + custom js/mithril editor.
 - use github actions for CI
-- add tests
-- Support SQL scripts via CLI tools (psql, sqli etc...)
 - Load and save query/script files
 - Enhance data dictionary functionality
-- APIs to manage users and connections
+- Support SQL scripts via CLI tools (psql, sqli etc...)
+- Act as a http DB proxy for other apps
+- add tests
 - Split the project into 2 separate repositories: server (Go backend) and client (web frontend) ?
-- Add Oracle and DuckDB support ?
+
 
 ## Built With
 - Go language
@@ -112,11 +117,11 @@ powershell -File install.ps1
 
 ## Architecture Notes
 - Use RESTful APIs.
-- User authentication via HTTP(s) Basic Auth and JSON Web Tokens (JWT).
+- User authentication via JSON Web Tokens (JWT).
 - Configuration files auto-reload.
 - User queries always use a new, clean connection to the database.
 - UI queries will use a connection from the pool if supported.
-
+- Use SQLite for data persistence
 
 ## Server configuration
 
@@ -134,37 +139,9 @@ cert-file:
 key-file:
 ```
 
-## Manage users and database connections by executing SQL queries
-db-portal uses a SQLite database with 3 tables to store those informations.
-Default data consist of an `admin` user who can use an sqlite3 connection named `db-portal`.
+## Manage users and database connections
+Common tasks now have a GUI.
+For operations that are not yet supported, 
+db-portal uses internally a SQLite database with a few tables.
+As shipped, the default `admin` user is allowed to the `SQLite db-portal` data source.
 To modify to your needs, you simply have to execute SQL queries.
-See SQL queries below for common tasks.
-
-Changing default password for admin user.  
-```sql
-update user set pwdhash = '' where name = 'admin'
-```
-> you can gen a pwdhash from this endpoint: hash/replace-with-your-password  
-ex: https://localhost:3000/hash/ThisIsBadPassword 
-
-Adding a user
-```sql
-insert into user (name, pwdhash) values ('demo', 'password-hash');
-
-```
-
-Adding a database connection
-use DSN format accepted by Go drivers
-```sql
-insert into connection (name, dbtype, dsn) values ('movies', 'sqlite3', 'file path');
-
-```
-
-Associate an existing user with an existing database connection
-```sql
-insert into user_connection (user_id, connection_id) 
-  select u.id, c.id 
-  from   user u join connection c
-  where  u.name = 'demo' and c.name = 'movies';
-
-```

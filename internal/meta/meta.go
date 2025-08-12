@@ -1,7 +1,13 @@
 package meta
 
-const Version = "0.2.2-beta"
+const AppVersion = "0.3.0-beta"
 const AppName = "db-portal"
 
-const JsPath = "./web/cmp"
-const MinjsPath = "./web/main.min.js"
+const WebFolder = "./web"
+const IndexPath = WebFolder + "/index.tmpl"
+const ManifestPath = WebFolder + "/manifest.json"
+const MinjsPath = WebFolder + "/main.min.js"
+const CssPath = WebFolder + "/style.css"
+const ImportJSPath = WebFolder + "/import.js"
+
+const JWTKeyFileName = "jwt.key"

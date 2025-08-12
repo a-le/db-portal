@@ -1,5 +1,4 @@
 /* colors */
-
 :root {
   --green: #5D8B5D;
   --red: #9A4C4C;
@@ -51,7 +50,6 @@
   --actived-text: var(--primary-text);
 }
 
-
 /* 
   color directives
 */
@@ -79,7 +77,7 @@ fieldset {
   border-color: var(--primary-text);
 }
 
-input, button, select, textarea {
+input, button, select, textarea, .fake-input {
   color: var(--secondary-text);
   background-color: var(--inputs-bg);
   border-color: var(--border);
@@ -88,27 +86,7 @@ input, button, select, textarea {
 
 button:not(:disabled):hover, select:not(:disabled):hover {
   background-color: var(--button-hover);
-}
-
-.tab-b {
-  border-bottom-color: var(--border);
-}
-
-.tab-b.selected {
-  border-bottom-color: var(--primary-text);
-}
-
-.tab-l {
-  border-left-color: var(--border);
-}
-
-.tab-l.selected {
-  border-left-color: var(--primary-text);
-}
-
-.tab.selected {
-  color: var(--secondary-text);
-  background-color: var(--actived-bg);
+  border: 1px solid var(--green);
 }
 
 table {
@@ -119,6 +97,9 @@ table {
 caption {
   background-color: var(--inputs-bg);
   color: var(--secondary-text);
+  text-align: left;
+  padding-left: 7px;
+  font-style: italic;
 }
 
 tbody tr:nth-of-type(even) {
@@ -145,19 +126,6 @@ nav.brand {
 
 .slider:before {
   background-color: var(--primary-bg);
-}
-
-code {
-  background-color: var(--secondary-bg);
-  border-color: var(--border);
-}
-
-.cm-editor {
-  background-color: var(--secondary-bg);
-}
-
-.cm-gutters {
-  background-color: var(--inputs-bg) !important;
 }
 
 /*
@@ -243,8 +211,29 @@ div, code {
     "area-main-menu"
     "area-main-content"
     "area-footer-content";
-  height: 100%;
+  /* height: 100%; */
+  min-height: 100vh;
+  /* ensures it fills the window */
+  height: 100vh;
   padding: 0 10px;
+}
+
+.area-main-header {
+  grid-area: area-main-header;
+  padding-top: 2px;
+  background: var(--primary-bg);
+}
+
+.area-main-menu {
+  grid-area: area-main-menu;
+}
+
+.area-main-content {
+  grid-area: area-main-content;
+}
+
+.area-footer-content {
+  grid-area: area-footer-content;
 }
 
 /* query page */
@@ -266,7 +255,7 @@ div, code {
 }
 
 .area-main-menu .grid {
-  margin-bottom: 5px; 
+  margin-bottom: 5px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -284,29 +273,32 @@ div, code {
 fieldset {
   display: inline-block;
   border-width: 1px;
-  padding: 0px 5px 5px 5px;
+  padding: 0px 8px 5px 8px;
   margin: 0;
   border-radius: 5px;
-  text-align: center;
 }
 
 legend {
-  margin-bottom: -4px;
+  text-align: left;
+  font-size: 95%;
 }
 
-input, button, select, textarea {
+input, button, select, textarea, label, .fake-input {
   font: inherit;
+  font-size: 14px;
 }
 
-input, button, select {
-  vertical-align: middle;
-  height: 22px;
-  line-height: 22px;
-  padding: 0 5px;
-  cursor: pointer;
+input, button, select, .fake-input {
   border-width: 1px;
   border-style: solid;
   border-radius: 5px;
+}
+
+input, button, select, label, .fake-input {
+  height: 22px;
+  line-height: 22px;
+  padding: 0 5px;
+  vertical-align: bottom;
 }
 
 button:disabled, select:disabled,
@@ -316,10 +308,15 @@ label:has(+ button:disabled), label:has(+ select:disabled) {
 }
 
 label {
-  /* display: inline-block; */
   display: inline-flex;
   padding: 0 4px;
-  cursor: pointer;
+  /* cursor: pointer; */
+  padding-right: 15px;
+}
+
+label>span {
+  white-space: nowrap;
+  padding-right: 5px;
 }
 
 .datadict {
@@ -344,15 +341,14 @@ label {
 }
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-textarea {
+textarea, .fake-input {
   width: 100%;
-  padding: 5px 10px;
-  margin-bottom: 10px;
+  /* margin-top: 2px;
+  padding: 5px 10px; */
   border-width: 1px;
   border-style: solid;
   border-radius: 5px;
-  outline-width: 1px;
-  outline-style: solid;
+  outline: none;
 }
 
 select:focus-visible {
@@ -363,6 +359,32 @@ select:focus-visible {
 .tab {
   border: 1px solid transparent;
   cursor: pointer;
+}
+
+.tab.selected {
+  color: var(--secondary-text);
+  background-color: var(--actived-bg);
+}
+
+.tab-b {
+  padding: 0 5px;
+  border-bottom-color: var(--border);
+}
+
+.tab-b:hover {
+  border: 1px solid var(--green);
+}
+
+.tab-b.selected {
+  border-bottom-color: var(--primary-text);
+}
+
+.tab-l {
+  border-left-color: var(--border);
+}
+
+.tab-l.selected {
+  border-left-color: var(--primary-text);
 }
 
 /* grid */
@@ -421,29 +443,30 @@ th+td {
   border-bottom-style: solid;
 }
 
-td:has(code) {
-  padding: 0;
-}
-
 /* Class to disable text selection */
 .no-select {
   user-select: none;
   /* Prevent text selection */
 }
 
-nav.brand {
-  font-size: smaller;
-  position: sticky;
-  top: 0;
-  z-index: 99;
+/* code mirror editor - start */
+td:has(code) {
+  padding: 0;
 }
 
-nav.brand a {
-  text-decoration: none;
+code {
+  background-color: var(--secondary-bg);
+  border-color: var(--border);
 }
 
+.cm-editor {
+  background-color: var(--secondary-bg);
+}
 
-/* code mirror editor */
+.cm-gutters {
+  background-color: var(--inputs-bg) !important;
+}
+
 code {
   display: block;
   overflow-y: auto;
@@ -456,6 +479,68 @@ code {
 .ͼ1.cm-focused {
   outline: none;
 }
+
+/* code mirror editor - end*/
+
+/* prismSqlEditor - start */
+.sql-editor {
+  position: relative;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  background: transparent;
+  height: 320px;
+}
+
+.sql-editor pre,
+.sql-editor textarea {
+  position: absolute;
+  height: 100%;
+  inset: 0;
+  margin: 0;
+  box-sizing: border-box;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  tab-size: 4;
+  white-space: pre;
+  padding: 8px;
+  border-radius: 0;
+  border: none;
+}
+
+/* Specific styles for pre */
+.sql-editor pre {
+  pointer-events: none;
+}
+
+/* Specific styles for textarea */
+.sql-editor textarea {
+  background: transparent;
+  color: transparent;
+  caret-color: #f8f8f2;
+  border: 0;
+  outline: none;
+  resize: none;
+}
+
+/* Code block style */
+.sql-editor code {
+  display: block;
+}
+
+/* Line numbers gutter and alignment */
+.sql-editor pre.line-numbers,
+.sql-editor textarea {
+  padding-left: calc(3.8em + 8px);
+}
+
+/* Line numbers color */
+.line-numbers .line-numbers-rows {
+  border-right-color: #444;
+}
+
+/* prismSqlEditor - end */
 
 /* Utility Classes */
 .text-warning {
@@ -475,15 +560,16 @@ code {
   text-overflow: ellipsis;
 }
 
-
 .cell-null {
   opacity: 60%;
   font-style: italic;
 }
+
 .cell-true {
   font-style: italic;
   color: var(--green);
 }
+
 .cell-false {
   font-style: italic;
   color: var(--red);
@@ -526,8 +612,16 @@ code {
   margin-top: 10px;
 }
 
+.mt-15 {
+  margin-top: 15px;
+}
+
 .mt-20 {
   margin-top: 20px;
+}
+
+.mt-30 {
+  margin-top: 30px;
 }
 
 .mb-5 {
@@ -540,6 +634,10 @@ code {
 
 .mb-20 {
   margin-bottom: 20px;
+}
+
+.mr-auto {
+  margin-right: auto;
 }
 
 .mr-0 {
@@ -555,6 +653,10 @@ code {
 }
 
 .mr-20 {
+  margin-right: 20px;
+}
+
+.mr-30 {
   margin-right: 20px;
 }
 
@@ -574,6 +676,10 @@ code {
   margin-left: 20px;
 }
 
+.ml-30 {
+  margin-left: 30px;
+}
+
 .ml-50 {
   margin-left: 50px;
 }
@@ -582,9 +688,42 @@ code {
   width: 80px;
 }
 
+.w-600 {
+  width: 500px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-130 {
+  min-height: 130px;
+}
+
+.block {
+  display: block;
+}
+
 .no-wrap {
   overflow: hidden;
   white-space: nowrap;
+}
+
+.no-underline {
+  text-decoration: none;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+}
+
+.error {
+  color: var(--red);
+  min-height: 1.5em;
+  white-space: pre;
+  display: block;
 }
 
 /* General styling for the switch container */
@@ -644,6 +783,3 @@ input:checked+.slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
-
-
-

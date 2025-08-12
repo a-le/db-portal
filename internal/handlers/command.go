@@ -2,40 +2,47 @@ package handlers
 
 import (
 	"context"
-	"db-portal/internal/db"
+	"database/sql"
+	"db-portal/internal/dbutil"
 	"db-portal/internal/response"
-	"db-portal/internal/security"
+
+	"db-portal/internal/contextkeys"
 	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
 
+type commandResp = response.Response[dbutil.DBResult]
+
 // commands are defined in config/commands.jsonc
 // some commands do mot exists for some drivers
 func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Context().Value(security.UserContextKey).(string)
-	conname := chi.URLParam(r, "conn")
+
+	resp := commandResp{}
+
+	currentUsername := contextkeys.UsernameFromContext(r.Context())
+	dsName := chi.URLParam(r, "dsName")
 	schema := chi.URLParam(r, "schema")
 	commandName := chi.URLParam(r, "command")
 
 	// reload config files if needed
 	s.CommandsConfig.Reload()
 
-	// get connection details
-	connDetails, err := s.Store.FetchConn(username, conname)
+	// get ds info from internal DB
+	ds, err := s.Store.RequireUserDataSource(currentUsername, currentUsername, dsName)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("connection %v not found or not allowed", conname), http.StatusNotFound)
+		resp.Error = err.Error()
+		response.WriteJSON(w, http.StatusInternalServerError, &resp)
 		return
 	}
 
-	var dResult db.DResult
-
 	// get DB connection
-	var conn db.Conn
-	conn, dResult.DBerror = db.GetConn(connDetails.DBVendor, connDetails.DSN, true)
-	if dResult.DBerror != nil {
-		response.SendJSON(&dResult, w)
+	var conn *sql.Conn
+	conn, err = dbutil.GetConn(ds.Vendor, ds.Location, true)
+	if err != nil {
+		resp.Error = err.Error()
+		response.WriteJSON(w, http.StatusOK, &resp)
 		return
 	}
 	defer conn.Close()
@@ -43,50 +50,48 @@ func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
 	// Set the schema if specified.
 	// Then, defer a query to restore the schema to the default before the connection is returned to the DB pool.
 	if schema != "" {
-		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", connDetails.DBVendor, []string{schema})
-		setSchemaDefault, _, _ := s.CommandsConfig.Data.Command("set-schema-default", connDetails.DBVendor, []string{})
+		setSchema, args, _ := s.CommandsConfig.Data.Command("set-schema", ds.Vendor, []string{schema})
+		setSchemaDefault, _, _ := s.CommandsConfig.Data.Command("set-schema-default", ds.Vendor, []string{})
 		if setSchemaDefault == "" {
-			http.Error(w, fmt.Sprintf("a 'set schema' command was defined, but the 'set-schema-default' command is empty. Driver is %s\n", connDetails.DBVendor), http.StatusInternalServerError)
+			resp.Error = fmt.Sprintf("a 'set schema' command was defined, but the 'set-schema-default' command is empty. Driver is %s\n", ds.Vendor)
+			response.WriteJSON(w, http.StatusInternalServerError, &resp)
 			return
 		}
-		if _, err = db.ExecContext(conn, setSchema, args); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if _, err = conn.ExecContext(r.Context(), setSchema, args...); err != nil {
+			resp.Data.DBerror = err.Error()
+			response.WriteJSON(w, http.StatusInternalServerError, &resp)
 			return
 		}
-		defer db.ExecContext(conn, setSchemaDefault, []any{})
+		defer conn.ExecContext(r.Context(), setSchemaDefault, []any{}...)
 	}
 
 	// get list of args from the query string. Those are SQL identifiers for the SQL command
-	var urlArgs []string
-	for i := 0; ; i++ {
-		v := r.URL.Query().Get(fmt.Sprintf("args[%d]", i)) // Get args from the query string (indexed parameters, ex: ?args[0]=foo&args[1]=bar)
-		if v == "" {
-			break
-		}
-		urlArgs = append(urlArgs, v)
-	}
+	urlArgs := r.URL.Query()["args"]
 
 	// fetch command and args
 	var command string
 	var args []any
 
-	if command, args, err = s.CommandsConfig.Data.Command(commandName, connDetails.DBVendor, urlArgs); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if command, args, err = s.CommandsConfig.Data.Command(commandName, ds.Vendor, urlArgs); err != nil {
+		resp.Error = err.Error()
+		response.WriteJSON(w, http.StatusInternalServerError, &resp)
 		return
 	}
 
 	// send response if command is not implemented
 	if command == "" {
-		dResult.DBerror = fmt.Errorf("command <%v> is not supported for %v", commandName, connDetails.DBVendor)
-		response.SendJSON(&dResult, w)
+		resp.Data.DBerror = fmt.Sprintf("command <%v> is not supported for %v", commandName, ds.Vendor)
+		resp.Error = fmt.Sprintf("command <%v> is not supported for %v", commandName, ds.Vendor)
+		response.WriteJSON(w, http.StatusOK, &resp)
 		return
 	}
 
 	// run the command
-	if dResult, err = db.DQueryContext(context.Background(), conn, command, args, 0); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if resp.Data, err = dbutil.QueryWithResult(context.Background(), conn, command, args, 0); err != nil {
+		resp.Data.DBerror = err.Error()
+		response.WriteJSON(w, http.StatusOK, &resp)
 		return
 	}
 
-	response.SendJSON(&dResult, w)
+	response.WriteJSON(w, http.StatusOK, &resp)
 }

@@ -1,116 +1,107 @@
-/*
-// Copyright (C) 2024 https://github.com/a-le
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Affero General Public License for more details.
-//
-// You should have received a copy of the GNU Affero General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
-*/
+const JWT_KEY = "jwt";
+
 const App = {
-    conn: "",
-    schema: "",
     theme: "",
-    tabState: new TabState("result"),
+    dataTransferAction: false,
+    claims: {},
+    isLogged: () => {
+        const jwt = localStorage.getItem(JWT_KEY);
+        if (jwt === null)
+            return false
+
+        App.claims = parseJwt(jwt);
+        if (App.claims.exp && Date.now() / 1000 > App.claims.exp) {
+            localStorage.removeItem(JWT_KEY);
+            return false
+        }
+        return true;
+    },
+    logout: () => {
+        localStorage.removeItem(JWT_KEY)
+    },
+    login: (token) => {
+        localStorage.setItem(JWT_KEY, token)
+    },
+    getAuthHeaders: () => {
+        return { "Authorization": "Bearer " + localStorage.getItem(JWT_KEY) }
+    },
+    getUsername: () => {
+        return App.claims.name
+    },
+    getIsAdmin: () => {
+        return App.claims.isadmin === 1 || App.claims.isadmin === "1";
+    },
     oninit: () => {
         var theme = localStorage.getItem("theme");
         App.theme = theme ? theme : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark-mode" : "light-mode";
+
+        App.pageState = new UIState({
+            def: localStorage.getItem("pageState") || "datasources",
+            onSet: (tab) => { localStorage.setItem("pageState", tab) }
+        });
     },
     view: () => {
-        return m("div.grid-main", {
-            class: App.theme
-        },
-            m("header.area-main-header",
-                m("nav.brand",
-                    m("a", { href: "/", title: "refresh page" }, versionInfo.appName),
-                    m("span.ml-10", "v", versionInfo.server),
-                )
-            ),
-            m("section.area-main-menu",
-                m("div.grid", { style: "grid-template-columns: auto 1fr auto;" },
-                    m("div.grid-col",
-                        m("div", m(ConnForm)),   // ConnForm component
-                        m("div.ml-10", m(SchemaForm))  // SchemaForm component
-                    ),
-                    m("div.grid-col.align-items-end.ml-10", m(ConnInfos)), // ConnInfos component
-                    m("div.grid-col.ml-auto.mr-0",
-                        m("div.ml-10", m(ThemeSwitch)), // ThemeSwitch component
-                        m("div.ml-10", m(LogOut)) // LogOut component
+        return [
+            m("div.grid-main", { class: App.theme },
+                m("header.area-main-header.sticky",
+                    m("div.grid", { style: "grid-template-columns: auto 1fr auto;" },
+                        m("div.grid-col.text-smaller",
+                            m("a.no-underline", { href: "/", title: "refresh page" }, versionInfo.AppName),
+                            m("span.ml-10", "v", versionInfo.AppVersion),
+                        ),
+                        m("div.grid-col.ml-auto.mr-auto",
+                            m(".tab.tab-b.mr-30", {
+                                class: App.pageState.selectedClass("datasources"),
+                                onclick: () => {
+                                    App.pageState.set("datasources");
+                                }
+                            }, m.trust("&#128279;data sources")),
+                            m(".tab.tab-b.mr-30", {
+                                class: App.pageState.selectedClass("query"),
+                                onclick: () => {
+                                    App.pageState.set("query");
+                                }
+                            }, m.trust("&#128462;&ThinSpace;SQL query")),
+                            m(".tab.tab-b", {
+                                class: App.pageState.selectedClass("copy"),
+                                onclick: () => {
+                                    App.pageState.set("copy");
+                                }
+                            }, m.trust("&#8644;&ThinSpace;copy data")),
+                        ),
+                        m("div.grid-col.ml-auto.mr-0",
+                            m("div.ml-10", m(ThemeSwitch)),
+                            m("div.ml-10", m(LogoutInput))
+                        ),
                     ),
                 ),
-            ),
-            m("section.area-main-content",
-                !App.conn ? null :
-                    [
-                        m("div.grid-query", {
-                            oncreate: function (vnode) {
-                                var h0 = document.querySelector('.grid-query').offsetHeight,
-                                    h1 = 195, // ideal area-query-editor height, can be greater
-                                    h2 = 335, // ideal area-query-output for 15 lines of results
-                                    h1 = Math.max(h0 - h2, h1);
-                                const LayoutGrid = GridResize('.grid-query', '.area-query-splitter', '.area-query-editor', `${h1}px 3px auto auto`, 195, false);
-                                LayoutGrid.init();
-                            }
-                        },
-                            m("section.area-query-editor",
-                                m("div.grid-q-editor-datadict", {
-                                    oncreate: function (vnode) {
-                                        const LayoutGrid = GridResize('.grid-q-editor-datadict', '.area-q-splitter', '.area-q-editor', `1fr 3px 1fr`, 540, true);
-                                        LayoutGrid.init();
-                                    }
-                                },
-                                    m("section.area-q-editor", m(QryForm)), // QryForm component
-                                    m("div.area-q-splitter.splitter.splitter-vertical"),
-                                    m("section.area-q-datadict", m(DataDict)), // DataDict component
-                                )
-                            ),
-                            m("div.area-query-splitter.splitter.splitter-horizontal"),
-                            m("div",
-                                m("section.area-query-output-menu",
-                                    m("div.grid", { style: "grid-template-columns: auto auto 1fr;" },
-                                        m("div.grid-col.tab.tab-b", {
-                                            class: App.tabState.selectedClass("result"),
-                                            onclick: () => App.tabState.set("result")
-                                        }, "result"),
-                                        m("div.grid-col.tab.tab-b.ml-20", {
-                                            class: App.tabState.selectedClass("explain"),
-                                            onclick: () => App.tabState.set("explain")
-                                        }, "explain"),
-                                        m("div.grid-col.align-items-end.ml-50", m(QryInfos)), // QryInfos component
-                                    ),
-                                ),
-                                m("section.area-query-output",
-                                    m("div", { class: App.tabState.displayClass("result") }, m(QryResult)), // QryResult component
-                                    m("div", { class: App.tabState.displayClass("explain") }, m(QryExplain)), // QryExplain component
-                                )
-                            )
-                        )
+
+                App.isLogged()
+                    ? [
+                        m("div", { class: App.pageState.displayClass("datasources") }, m(DatasourcesPage)),
+                        m("div", { class: App.pageState.displayClass("query") }, m(QueryPage)),
+                        m("div", { class: App.pageState.displayClass("copy") }, m(CopyDataPage)),
                     ]
-            ),
-            m("footer.area-footer-content.ml-auto.mr-0.text-x-small",
-                m("div",
-                    m("a", {
-                        href: "https://github.com/a-le/" + versionInfo.appName,
-                        target: "_blank",
-                        title: "View github project page"
-                    }, versionInfo.appName
-                    ),
-                    m("span", m.trust(" &copy; 2025. Licensed under "),
+                    : m("div", m(LoginForm)),
+
+                m("footer.area-footer-content.ml-auto.mr-0.text-x-small",
+                    m("div",
                         m("a", {
-                            href: "https://www.gnu.org/licenses/agpl-3.0.html",
-                            title: "View License",
-                            target: "_blank"
-                        }, "AGPL"),
-                    ),
+                            href: "https://github.com/a-le/" + versionInfo.AppName,
+                            target: "_blank",
+                            title: "View github project page"
+                        }, versionInfo.AppName
+                        ),
+                        m("span", m.trust(" &copy; 2025. Licensed under "),
+                            m("a", {
+                                href: "https://www.gnu.org/licenses/agpl-3.0.html",
+                                title: "View License",
+                                target: "_blank"
+                            }, "AGPL"),
+                        ),
+                    )
                 )
             )
-        );
+        ];
     }
 };

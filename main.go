@@ -1,15 +1,16 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
+	"path/filepath"
 
 	"db-portal/internal/config"
-	"db-portal/internal/datatransfer"
 	"db-portal/internal/handlers"
 	"db-portal/internal/internaldb"
+	"db-portal/internal/meta"
 	"db-portal/internal/security"
 	"time"
 
@@ -18,97 +19,116 @@ import (
 )
 
 func main() {
-	// get config folder path
-	configPath, err := config.NewConfigPath(os.Args)
+
+	// Declare and parse command line flags
+	configPathFlag := flag.String("config", "", "Path to config folder")
+	setMasterPasswordFlag := flag.String("set-master-password", "", "Set new password for master user (id=1)")
+	flag.Parse()
+
+	configPath, err := config.NewConfigPath(*configPathFlag)
 	if err != nil {
 		log.Fatalf("error getting config path: %s", err)
 	}
 
-	// initialize internal DB store
+	// Initialize internal DB store
 	store, err := internaldb.NewStore(configPath)
 	if err != nil {
 		log.Fatalf("error initializing connections: %v", err)
 	}
 	fmt.Printf("DB file %v will be used as internal DB\n", store.DBPath)
 
-	// warm up internal DB in the background so that 1st request is not slow
-	fmt.Println("DB warmup start")
-	go func() {
-		if err := store.WarmUp(); err != nil {
-			log.Printf("error warming up internal DB: %v", err)
-		} else {
-			fmt.Println("DB warmup done")
+	// Handle set-master-password flag
+	if *setMasterPasswordFlag != "" {
+		if err := store.SetMasterUserPassword(*setMasterPasswordFlag); err != nil {
+			log.Fatalf("failed to set master password: %v", err)
 		}
-	}()
+		fmt.Println("Master user password updated successfully")
+	}
 
-	// load server config file
-	serverConfig := config.New[config.Server](configPath + "/server.yaml")
+	// Load server config file
+	path := filepath.Join(configPath, "server.yaml")
+	serverConfig := config.New[config.Server](path)
 	if err := serverConfig.Load(); err != nil {
 		log.Fatalf("error loading %s file: %s", serverConfig.Filename, err)
 	}
 	useHTTPS := serverConfig.Data.CertFile != "" && serverConfig.Data.KeyFile != ""
 
-	// load sql commands config file
-	commandsConfig := config.New[config.CommandsConfig](configPath + "/commands.yaml")
+	// Load sql commands config file
+	path = filepath.Join(configPath, "commands.yaml")
+	commandsConfig := config.New[config.CommandsConfig](path)
 	if err := commandsConfig.Load(); err != nil {
 		log.Fatalf("error loading %s file: %s", commandsConfig.Filename, err)
 	}
 
-	// gen a random JWT secret key
-	jwtSecretKey := security.RandomString(32)
+	// JWTSecretKey is read from file, it is generated if file not exists
+	path = filepath.Join(configPath, meta.JWTKeyFileName)
+	key, err := security.LoadJWTSecretKey(path)
+	if err != nil {
+		key, err = security.GenerateJWTSecretKey()
+		if err != nil {
+			log.Fatalf("error generating JWT secret key: %s", err)
+		}
+		if err := security.SaveJWTSecretKey(path, key); err != nil {
+			log.Fatalf("error saving file: %s", err)
+		}
+	}
+	security.JWTSecretKey = key
 
-	// initialize services for handlers
+	// Initialize services for handlers
 	svcs := &handlers.Services{
 		Store:          store,
 		CommandsConfig: &commandsConfig,
 		ServerConfig:   &serverConfig,
-		Exporter:       &datatransfer.DefaultExporter{},
-		JWTSecretKey:   jwtSecretKey,
 	}
 
 	r := chi.NewRouter()
-
-	// Setup security middleware (CSRF, CORS, etc.) globally
-	var allowedOrigins []string
-	if useHTTPS {
-		allowedOrigins = []string{"https://" + serverConfig.Data.Addr}
-	} else {
-		allowedOrigins = []string{"http://" + serverConfig.Data.Addr}
-	}
-	secConfig := security.NewSecurityConfig(store, jwtSecretKey, allowedOrigins)
-	secConfig.SetupSecurityMiddleware(r)
 
 	// Core middleware stack
 	r.Use(middleware.Logger)
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middleware.Compress(5, "text/html", "text/css", "application/json", "text/javascript"))
 
-	// API routes with authentication
-	r.Route("/api", func(api chi.Router) {
-		api.Use(secConfig.Auth)
+	// Public routes
+	r.Get("/", svcs.IndexHandler)
+	r.Handle("/web/*", svcs.StaticFileHandler())
+	r.Post("/api/auth/login", svcs.HandleLogin)
 
-		api.Get("/config/cnxnames", svcs.CnxNamesHandler)
-		api.Get("/connect/{conn}", svcs.ConnectHandler)
-		api.Get("/command/{conn}/{schema}/{command}", svcs.CommandHandler)
-		api.Post("/query", svcs.QueryHandler)
-		api.Post("/export", svcs.ExportHandler)
-		//api.Post("/import", svcs.ImportHandler)
-		api.Get("/clockresolution", svcs.ClockResolutionHandler)
+	// Private routes
+	r.Route("/api", func(api chi.Router) {
+		api.Use(security.JWTMiddleware) // apply JWT auth middleware
+
+		api.Get("/users", svcs.HandleListUsers)
+		api.Post("/users", svcs.HandleCreateUser)
+
+		api.Get("/users/{username}/data-sources", svcs.HandleListUserDataSources)
+		api.Get("/users/{username}/available-data-sources", svcs.HandleListUserAvailableDataSources)
+		api.Get("/users/{username}/data-sources/{dsName}/test", svcs.HandleUserDataSourceTest)
+		api.Post("/users/{username}/data-sources/{dsName}", svcs.HandleCreateUserDataSource)
+		api.Delete("/users/{username}/data-sources/{dsName}", svcs.HandleDeleteUserDataSource)
+
+		api.Post("/data-sources/test", svcs.HandleDataSourceTest) // do not use GET, use POST to receive DSN location
+		api.Post("/data-sources", svcs.HandleCreateDataSource)
+
+		api.Get("/vendors", svcs.HandleListVendors)
+
+		api.Get("/clock-resolution", svcs.HandleClockResolution)
+
+		api.Get("/command/{dsName}/{command}", svcs.CommandHandler)
+		api.Get("/command/{dsName}/{schema}/{command}", svcs.CommandHandler)
+
+		api.Post("/query/{dsName}", svcs.QueryHandler)
+		api.Post("/query/{dsName}/{schema}", svcs.QueryHandler)
+
+		api.Post("/copy", svcs.CopyHandler)
 	})
 
-	// Public routes (no Auth)
-	r.With(secConfig.Auth).Get("/", svcs.IndexHandler)
-	r.With(secConfig.Auth).Get("/logout", svcs.LogoutHandler)
-	r.Get("/hash/{string}", svcs.HashHandler)
-	r.Handle("/web/*", svcs.StaticFileHandler())
-
-	// create HTTP server
+	// Create HTTP server
 	httpServer := &http.Server{
 		Addr:    serverConfig.Data.Addr,
 		Handler: r,
 	}
 
-	// start the server with HTTPS if cert and key files are provided, otherwise use HTTP
+	// Start the server with HTTPS if cert and key files are provided, otherwise use HTTP
 	if useHTTPS {
 		fmt.Printf("server is listening at https://%s\n", httpServer.Addr)
 		if err := httpServer.ListenAndServeTLS(serverConfig.Data.CertFile, serverConfig.Data.KeyFile); err != nil {

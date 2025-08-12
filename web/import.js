@@ -1,0 +1,26 @@
+// this file is generated automatically for IDE awareness. 
+import "./cmp/utils/various.js";
+import "./cmp/utils/optgroup.js";
+import "./cmp/inputs/dataSource.js";
+import "./cmp/inputs/schema.js";
+import "./cmp/inputs/table.js";
+import "./cmp/inputs/endpointType.js";
+import "./cmp/inputs/fileInput.js";
+import "./cmp/inputs/fileFormat.js";
+import "./cmp/inputs/dict.js";
+import "./cmp/inputs/select.js";
+import "./cmp/inputs/logout.js";
+import "./cmp/sections/dsInfo.js";
+import "./cmp/sections/qryInfos.js";
+import "./cmp/sections/qryResult.js";
+import "./cmp/sections/dictColumns.js";
+import "./cmp/sections/dictCode.js";
+import "./cmp/forms/qryExplain.js";
+import "./cmp/forms/dataEndpoint.js";
+import "./cmp/forms/qry.js";
+import "./cmp/forms/dataDict.js";
+import "./cmp/forms/login.js";
+import "./cmp/pages/query.js";
+import "./cmp/pages/copyData.js";
+import "./cmp/pages/datasources.js";
+import "./cmp/app.js";

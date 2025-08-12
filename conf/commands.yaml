@@ -7,14 +7,12 @@
 #       - postgresql: $1 to $N
 #       - sqlite3: ?
 #       - mysql: ?
-#       - firebird: ?
 #       - mssql: @p1 to @pN
 #      - clickhouse: %s
 
 
 ## set schema/database connection
 set-schema:
-  firebird: ""
   mssql: "use %s"
   mysql: ""
   postgresql: "set schema '%s'"
@@ -22,7 +20,6 @@ set-schema:
   clickhouse: "use %s"
 
 set-schema-default:
-  firebird: ""
   mssql: "use default_database"
   mysql: ""
   postgresql: "set search_path to default"
@@ -31,7 +28,6 @@ set-schema-default:
 
 # ##
 # current_database: # not tested
-#   firebird: ""
 #   mssql: "select db_name()"
 #   mysql: "select database()"
 #   postgresql: "select current_database()"
@@ -39,15 +35,13 @@ set-schema-default:
 
 # ##
 # current_schema: # not tested
-#   firebird: ""
 #   mssql: ""
 #   mysql: ""
 #   postgresql: "select current_schema()"
 #   sqlite3: ""
 
 ##
-conn-infos:
-  firebird: "SELECT null, null, rdb$get_context('SYSTEM', 'DB_NAME') AS \"file\", null, CURRENT_USER AS \"user\", 'Firebird: ' || rdb$get_context('SYSTEM', 'ENGINE_VERSION') AS \"version\" FROM RDB$DATABASE"
+ds-info:
   mssql: "select @@SERVERNAME as hostname, CONNECTIONPROPERTY('local_tcp_port') as port, db_name() as db_name, null, user_name() as user_name, @@version as version"
   mysql: "select @@hostname as 'hostname', @@port AS 'port', database() as 'database', null, current_user() as 'current_user', version() as version"
   postgresql: "select current_setting('listen_addresses') as listen, current_setting('port') as port, current_database() as database, current_setting('search_path') as search_path, user, version() as version"
@@ -55,7 +49,6 @@ conn-infos:
   clickhouse: "select hostName() as hostname, getServerPort('tcp_port') as port, currentDatabase() as database, null, currentUser() as user, 'Clickhouse ' || version() as version"
 
 version:
-  firebird: "SELECT 'Firebird: ' || rdb$get_context('SYSTEM', 'ENGINE_VERSION') AS version FROM rdb$database;"
   mssql: "select @@version as version"
   mysql: "select version()"
   postgresql: "select version()"
@@ -65,7 +58,6 @@ version:
 
 ## explain query
 explain:  
-  firebird: ""
   mssql: "SET SHOWPLAN_ALL ON" # command will be executed, then query.
   mysql: "analyze" # query will be appended. No placeholder needed.
   postgresql: "explain analyze" # query will be appended. No placeholder needed.
@@ -74,7 +66,6 @@ explain:
 
 ## activity
 activity:
-  firebird: "SELECT * FROM MON$STATEMENTS"
   mssql: "SELECT r.session_id, r.start_time, r.status, r.command, r.sql_handle, t.text AS query_text FROM sys.dm_exec_requests AS r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) AS t WHERE r.session_id > 50"
   mysql: "show processlist"
   postgresql: "SELECT query_start, datname, state, query FROM pg_stat_activity where usename = current_user order by 1"
@@ -83,7 +74,6 @@ activity:
 
 ## object lists
 schemas:
-  firebird: ""
   mssql: "SELECT name FROM sys.databases order by 1"
   mysql: "" # show databases
   postgresql: "select schema_name from information_schema.schemata where schema_name not like 'pg\\_%' order by 1"
@@ -91,7 +81,6 @@ schemas:
   clickhouse: "select distinct lower(name) as name FROM system.databases order by lower(name)" #"SHOW DATABASES"
 
 tables:
-  firebird: "SELECT RDB$RELATION_NAME AS TABLE_NAME FROM RDB$RELATIONS WHERE RDB$VIEW_BLR IS NULL AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0);"
   mssql: "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY 1"
   mysql: "show full tables WHERE Table_Type = 'BASE TABLE'"
   postgresql: "select table_name from information_schema.tables where table_schema = (select current_schema) and table_type = 'BASE TABLE' order by 1"
@@ -99,7 +88,6 @@ tables:
   clickhouse: "SELECT name FROM system.tables where database = currentDatabase() and engine <> 'View' order by 1"
 
 views:
-  firebird: "SELECT RDB$RELATION_NAME AS VIEW_NAME FROM RDB$RELATIONS WHERE RDB$VIEW_BLR IS NOT NULL AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0);"
   mssql: "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS ORDER BY 1"
   mysql: "SHOW FULL TABLES WHERE Table_Type LIKE 'VIEW';"
   postgresql: "select table_name from information_schema.views where table_schema = (select current_schema) order by 1"
@@ -107,7 +95,6 @@ views:
   clickhouse: "SELECT name FROM system.tables where database = currentDatabase() and engine = 'View' ORDER BY name"
 
 procedures:
-  firebird: "SELECT rdb$procedure_name, 'procedure' FROM rdb$procedures UNION SELECT rdb$function_name, 'function' FROM rdb$functions  order by 1"
   mssql: "SELECT name FROM sys.procedures ORDER BY 1"
   mysql: "select routine_name from information_schema.routines where routine_schema IN (SELECT SCHEMA())"
   postgresql: "SELECT routine_name routine_type FROM information_schema.routines WHERE routine_schema = (select current_schema) order by 1"
@@ -116,7 +103,6 @@ procedures:
 
 ## object columns
 table-columns:
-  firebird: "SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_LENGTH, rf.RDB$DEFAULT_SOURCE, rf.RDB$NULL_FLAG FROM RDB$RELATION_FIELDS rf JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION"
   mssql: "SELECT col.COLUMN_NAME AS column_name, col.DATA_TYPE AS data_type, col.CHARACTER_MAXIMUM_LENGTH AS max_length, col.IS_NULLABLE AS is_nullable, CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'YES' ELSE 'NO' END AS is_primary_key FROM INFORMATION_SCHEMA.COLUMNS col LEFT JOIN (SELECT ccu.COLUMN_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu ON tc.CONSTRAINT_NAME = ccu.CONSTRAINT_NAME WHERE tc.TABLE_NAME = @p1 AND tc.CONSTRAINT_TYPE = 'PRIMARY KEY') pk ON col.COLUMN_NAME = pk.COLUMN_NAME WHERE col.TABLE_NAME = @p1 ORDER BY col.ORDINAL_POSITION"
   mysql: "SHOW COLUMNS FROM %s"
   postgresql: "SELECT column_name as name, data_type as type, character_maximum_length as max_len, is_nullable as null, column_default as def from information_schema.columns where table_schema = (select current_schema) and table_name = $1 order by ordinal_position"
@@ -124,7 +110,6 @@ table-columns:
   clickhouse: "SELECT name, type, is_in_primary_key FROM system.columns where database = currentDatabase() and table = '%s' ORDER BY position"
 
 view-columns:
-  firebird: "SELECT rf.RDB$FIELD_NAME, f.RDB$FIELD_TYPE, f.RDB$FIELD_LENGTH, rf.RDB$DEFAULT_SOURCE, rf.RDB$NULL_FLAG FROM RDB$RELATION_FIELDS rf JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME WHERE rf.RDB$RELATION_NAME = ? ORDER BY rf.RDB$FIELD_POSITION"
   mssql: "SELECT col.COLUMN_NAME AS column_name, col.DATA_TYPE AS data_type, col.CHARACTER_MAXIMUM_LENGTH AS max_length, col.IS_NULLABLE AS is_nullable FROM INFORMATION_SCHEMA.COLUMNS col WHERE col.TABLE_NAME = @p1 ORDER BY col.ORDINAL_POSITION"
   mysql: "SHOW COLUMNS FROM %s"
   postgresql: "SELECT column_name as name, data_type as type, character_maximum_length as max_len, is_nullable as null, column_default as def from information_schema.columns where table_schema = (select current_schema) and table_name = $1 order by ordinal_position"
@@ -134,7 +119,6 @@ view-columns:
 
 ## object definitions
 table-definition:
-  firebird: ""
   mssql: ""
   mysql: "show create table `%s`"
   postgresql: ""
@@ -142,7 +126,6 @@ table-definition:
   clickhouse: "SHOW CREATE TABLE %s"
 
 view-definition:
-  firebird: ""
   mssql: "EXEC sp_helptext @p1"
   mysql: "show create view `%s`"
   postgresql: "SELECT pg_get_viewdef($1::regclass) as view_def"
@@ -150,7 +133,6 @@ view-definition:
   clickhouse: "SHOW CREATE TABLE %s"
 
 procedure-definition:
-  firebird: "SELECT RDB$PROCEDURE_SOURCE AS PROCEDURE_CODE FROM RDB$PROCEDURES WHERE RDB$PROCEDURE_NAME = ?"
   mssql: "EXEC sp_helptext @p1"
   mysql: "show create procedure `%s`"
   postgresql: "SELECT pg_get_functiondef($1::regproc) as function_def"

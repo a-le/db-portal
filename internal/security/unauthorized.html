@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <title>Unauthorized</title>
+        <style>
+            body {
+                background: #fff;
+                color: #222;
+                font-family: sans-serif;
+            }
+            button {
+                padding: 0.5em 1em;
+                font-size: 1em;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background: #222;
+                    color: #eee;
+                }
+                button {
+                    background: #444;
+                    color: #eee;
+                    border: 1px solid #888;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Unauthorized: Please provide credentials</h2>
+        <button onclick="location.reload()">Reload Page</button>
+    </body>
+</html>

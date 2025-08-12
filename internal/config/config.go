@@ -78,11 +78,11 @@ func JoinPath(folderPath string, filePath string) string {
 }
 
 // Get the path to the config folder
-func NewConfigPath(args []string) (path string, err error) {
+func NewConfigPath(arg string) (path string, err error) {
 
 	// path given as command-line argument
-	if len(args) > 1 {
-		path = filepath.Clean(args[1])
+	if len(arg) > 1 {
+		path = filepath.Clean(arg)
 	} else {
 		// path is a /conf folder in the executable folder
 		var executablePath string
@@ -94,5 +94,5 @@ func NewConfigPath(args []string) (path string, err error) {
 
 	_, err = os.Stat(path)
 
-	return
+	return path, err
 }

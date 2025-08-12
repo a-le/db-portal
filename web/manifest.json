@@ -1,0 +1,32 @@
+[
+  "/web/cmp/utils/various.js",
+  "/web/cmp/utils/optgroup.js",
+  
+  "/web/cmp/inputs/dataSource.js",
+  "/web/cmp/inputs/schema.js",
+  "/web/cmp/inputs/table.js",
+  "/web/cmp/inputs/endpointType.js",
+  "/web/cmp/inputs/fileInput.js",
+  "/web/cmp/inputs/fileFormat.js",
+  "/web/cmp/inputs/dict.js",
+  "/web/cmp/inputs/select.js",
+  "/web/cmp/inputs/logout.js",
+  
+  "/web/cmp/sections/dsInfo.js",
+  "/web/cmp/sections/qryInfos.js",
+  "/web/cmp/sections/qryResult.js",
+  "/web/cmp/sections/dictColumns.js",
+  "/web/cmp/sections/dictCode.js",
+
+  "/web/cmp/forms/qryExplain.js",
+  "/web/cmp/forms/dataEndpoint.js",
+  "/web/cmp/forms/qry.js",
+  "/web/cmp/forms/dataDict.js",
+  "/web/cmp/forms/login.js",
+
+  "/web/cmp/pages/query.js",
+  "/web/cmp/pages/copyData.js",
+  "/web/cmp/pages/datasources.js",
+  
+  "/web/cmp/app.js"
+]

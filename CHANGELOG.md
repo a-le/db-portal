@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.0-beta **rolling release**
+- **Go code refactoring, cleanup and quality improvment**
+- **New ETL ("copy data" page) features that supports all data sources (DSN) and .csv/.json/.xlsx files**  
+- **New "data sources" pages to manage DSN and users**
+- **Drop download "compress to .gz" feature**
+- **Simplify authentification by just using JWT + HTTPS**
+
 ## v0.2.2-beta **rolling release**
 - **Code refactoring, cleanup and quality improvment**
 - **JSON export now writes to a temporary file instead of processing in memory**

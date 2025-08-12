@@ -1,32 +1,29 @@
 package response
 
 import (
-	"db-portal/internal/db"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
-type Data struct {
-	Data any `json:"data"`
+type Response[T any] struct {
+	Data  T      `json:"data"`
+	Error string `json:"error"`
 }
 
-// Define an interface that includes accepted types
-type JSONResponse interface {
-	db.DResult | Data
-}
+type BasicResponse = Response[any]
 
-// SendJSON converts the response to JSON and sends it
-func SendJSON[T JSONResponse](response *T, w http.ResponseWriter) {
-	// Convert the response to JSON
-	jsonBytes, err := json.Marshal(response)
+func WriteJSON(w http.ResponseWriter, status int, resp any) {
+	w.Header().Set("Content-Type", "application/json")
+
+	b, err := json.Marshal(resp)
 	if err != nil {
-		fmt.Printf("%+v\n", response)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		// error calling MarshalJSON
+		// set a new resp and status
+		status = http.StatusInternalServerError
+		resp = BasicResponse{Error: err.Error()}
+		b, _ = json.Marshal(resp)
 	}
 
-	// Send the JSON response
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonBytes)
+	w.WriteHeader(status)
+	w.Write(b)
 }

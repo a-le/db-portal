@@ -19,7 +19,7 @@ type CommandsConfig map[string]struct {
 }
 
 // Build SQL command string and args
-func (c CommandsConfig) Command(name string, dbVendor types.DBVendor, identifiers []string) (qry string, args []any, err error) {
+func (c CommandsConfig) Command(name string, dbVendor string, identifiers []string) (qry string, args []any, err error) {
 	cmd, ok := c[name]
 	if !ok {
 		err = fmt.Errorf("command %s could not be found", name)
@@ -28,8 +28,6 @@ func (c CommandsConfig) Command(name string, dbVendor types.DBVendor, identifier
 	switch dbVendor {
 	case types.DBVendorClickHouse:
 		qry = cmd.Clickhouse
-	case types.DBVendorFirebird:
-		qry = cmd.Firebird
 	case types.DBVendorMySQL, types.DBVendorMariaDB:
 		qry = cmd.Mysql
 	case types.DBVendorMSSQL:
