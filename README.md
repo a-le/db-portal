@@ -67,7 +67,6 @@ Whether you need a simple tool for personal database management or a multi-user 
 
 
 ## Quick Installation
-<!--
 1. **Run the install script**
 
 **Linux/macOS:**  
@@ -81,10 +80,10 @@ bash install.sh
 irm https://raw.githubusercontent.com/a-le/db-portal/main/install/install.ps1 -OutFile install.ps1
 powershell -File install.ps1
 ```
--->
+<!--
 1. For the time being, you should **build the app yourself** from source.
   With Go installed, `go build` in the source directory is all you need !
-
+-->
 2. Run executable: `db-portal --set-master-password=your_password`  
 <sub>--set-master-password argument is only needed on the first run, or if you need to reset password.</sub>
 

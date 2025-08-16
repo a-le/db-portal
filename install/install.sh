@@ -8,21 +8,28 @@ if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
     exit 1
 fi
 
+echo "Fetching latest release info..."
+latest_tag=$(curl -s https://api.github.com/repos/a-le/db-portal/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+echo "Latest version detected: $latest_tag"
+
 echo "Downloading db-portal binary..."
-curl -LO https://github.com/a-le/db-portal/releases/download/v0.2.1/db-portal
+curl -LO "https://github.com/a-le/db-portal/releases/download/$latest_tag/db-portal"
 chmod +x db-portal
 
 echo "Downloading source archive..."
-curl -LO https://github.com/a-le/db-portal/archive/refs/tags/v0.2.1.tar.gz
+curl -LO "https://github.com/a-le/db-portal/archive/refs/tags/$latest_tag.tar.gz"
+
+folder_name="db-portal-${latest_tag#v}"
 
 echo "Extracting conf/ and web/ folders..."
-tar --extract --file=v0.2.1.tar.gz \
+tar --extract --file="$latest_tag.tar.gz" \
   --wildcards \
   --strip-components=1 \
-  'db-portal-0.2.1/conf/*' 'db-portal-0.2.1/web/*'
+  "$folder_name/conf/*" "$folder_name/web/*"
 
 echo "Cleaning up..."
-rm v0.2.1.tar.gz
+rm "$latest_tag.tar.gz"
 
 echo "Installation complete."
-echo "Run the app with: ./db-portal"
+echo "Run the app with: ./db
