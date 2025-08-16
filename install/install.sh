@@ -13,8 +13,18 @@ latest_tag=$(curl -s https://api.github.com/repos/a-le/db-portal/releases/latest
 
 echo "Latest version detected: $latest_tag"
 
-echo "Downloading db-portal binary..."
-curl -LO "https://github.com/a-le/db-portal/releases/download/$latest_tag/db-portal"
+os=$(uname | tr '[:upper:]' '[:lower:]')
+if [[ "$os" == "linux" ]]; then
+    binary="db-portal-linux"
+elif [[ "$os" == "darwin" ]]; then
+    binary="db-portal-darwin"
+else
+    echo "Unsupported OS: $os"
+    exit 1
+fi
+
+echo "Downloading $binary..."
+curl -LO "https://github.com/a-le/db-portal/releases/download/$latest_tag/$binary"
 chmod +x db-portal
 
 echo "Downloading source archive..."
