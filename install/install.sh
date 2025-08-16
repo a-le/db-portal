@@ -32,4 +32,5 @@ echo "Cleaning up..."
 rm "$latest_tag.tar.gz"
 
 echo "Installation complete."
-echo "Run the app with: ./db
+echo "Run the app with: ./db-portal-linux or ./db-portal-darwin"
+echo 'add the --set-master-password="your password" argument on the first run'
