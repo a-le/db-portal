@@ -67,9 +67,13 @@ func main() {
 		key, err = security.GenerateJWTSecretKey()
 		if err != nil {
 			log.Fatalf("error generating JWT secret key: %s", err)
+		} else {
+			fmt.Println("JWT secret key generated successfully")
 		}
 		if err := security.SaveJWTSecretKey(path, key); err != nil {
 			log.Fatalf("error saving file: %s", err)
+		} else {
+			fmt.Println("JWT secret key file saved successfully")
 		}
 	}
 	security.JWTSecretKey = key

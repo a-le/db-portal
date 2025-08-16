@@ -2,6 +2,7 @@ package internaldb
 
 import (
 	"database/sql"
+	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -86,6 +87,11 @@ func (s *Store) CreateUser(currentUsername, username string, isAdmin int, passwo
 // checks if the provided username and password match the stored credentials.
 // also returns UserInfo if found.
 func (s *Store) CheckUserCredentials(username string, password string) (bool, *User, error) {
+	if password == "" {
+		err := errors.New("password can't be empty")
+		return false, nil, err
+	}
+
 	query := `SELECT name, isadmin, pwdhash FROM user WHERE name = ?`
 	var name string
 	var isadmin int

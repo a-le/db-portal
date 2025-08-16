@@ -1,8 +1,7 @@
+/conf/jwt.key
 /vendor/
 /releases/
-/tmp/
-db-portal
-db-portal.exe
 /.vscode/
-*_wip.go
-*_excl.go
+db-portal-linux
+db-portal-darwin
+db-portal.exe
