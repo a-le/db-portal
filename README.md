@@ -6,11 +6,11 @@
 
 `db-portal`
 ## Project Description
-**db-portal** is a web application (SPA with REST APIs) for querying and managing SQL databases, providing both a backend server and a browser-based interface. for querying and managing SQL databases. 
-It supports multiple database engines (ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite, and more), allowing users to run SQL queries, browse data dictionaries, and export data with ease. The platform features a unified interface for ETL operations, enabling data copying between various sources and destinations, including databases and files (.json, .xlsx, .csv).
-db-portal is designed for both solo and multi-user environments. Regular users are restricted to the resources assigned to them, while administrators have full access to all connections and data sources. The application is highly configurable, secure (JWT authentication, HTTPS support), and lightweight, making it suitable for deployment on Windows, Linux, and other platforms supported by Go.
+**db-portal** is a cross-platform SQL editor with data dictionnary browsing and light ETL features.  
+Several DB vendors are supported, as well as CSV, JSON, and XLSX file formats.
 
-Whether you need a simple tool for personal database management or a multi-user solution for your team, db-portal provides a flexible and efficient way to interact.
+db-portal is designed for both solo and multi-user use.  
+Whether you need a simple tool for personal database management or a multi-user solution, db-portal aims to provides a flexible and efficient way to interact.
 
 ## Demo (old v0.2.0 version)
 ![Loading animation](.github/demo.gif)
@@ -27,10 +27,10 @@ Whether you need a simple tool for personal database management or a multi-user 
 
 ## Features
 - Query all your databases through a unified web interface in your browser
-- Supports the following databases: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite and more to come.
+- Supports the following DB vendors: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite and more to come.
 - Write SQL queries in a syntax-highlighted minimalist editor
 - View query results in a smart HTML table
-- Browse data dictionaries (tables, columns, views, procedures, etc.)
+- Browse data dictionaries (tables, columns, views, procedures)
 
 - ETL features
   - Use a GUI for ETL operations. Set data sources as origin and destination, click submit and voilà ! 
@@ -58,7 +58,7 @@ Whether you need a simple tool for personal database management or a multi-user 
   - Minimal CPU and memory usage
   - Custom JavaScript and CSS using a lightweight virtual DOM library (Mithril.js)
 
-- Cross-platform support: Windows, Linux, and other OSes supported by Go
+- Cross-platform support: Windows, Linux, Mac OS and other OSes supported by Go
 - **see [CHANGELOG.md](https://raw.githubusercontent.com/a-le/db-portal/main/CHANGELOG.md) for latest features added to rolling release**
 
 
