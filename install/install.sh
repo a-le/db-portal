@@ -25,7 +25,7 @@ fi
 
 echo "Downloading $binary..."
 curl -LO "https://github.com/a-le/db-portal/releases/download/$latest_tag/$binary"
-chmod +x db-portal
+chmod +x $binary
 
 echo "Downloading source archive..."
 curl -LO "https://github.com/a-le/db-portal/archive/refs/tags/$latest_tag.tar.gz"
