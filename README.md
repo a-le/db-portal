@@ -16,17 +16,19 @@ Whether you need a simple tool for personal database management or a multi-user 
 Cick on images to see full size.  
 <table>
     <tr>
-        <td>
+        <td>Manage data sources (DSN)
             <a href=".github/dataSources.gif" target="_blank">
                 <img src=".github/dataSources.gif" width="400" />
             </a>
         </td>
-        <td>
+        <td>SQL editor
             <a href=".github/sqlEditor.gif" target="_blank">
                 <img src=".github/sqlEditor.gif" width="400" />
             </a>
         </td>
-        <td>
+    </tr>
+    <tr>
+        <td>Copy data page
             <a href=".github/copyData.gif" target="_blank">
                 <img src=".github/copyData.gif" width="400" />
             </a>
