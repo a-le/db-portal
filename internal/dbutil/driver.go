@@ -60,3 +60,27 @@ func SetPlaceholders(dbVendor string, numCols int) ([]string, error) {
 	}
 	return placeholders, nil
 }
+
+func SetBatchPlaceholders(dbVendor string, numCols, numRows int) ([]string, error) {
+	placeholderStyle, err := PlaceholderStyle(dbVendor)
+	if err != nil {
+		return nil, err
+	}
+	placeholders := make([]string, numCols*numRows)
+	for row := 0; row < numRows; row++ {
+		for col := 0; col < numCols; col++ {
+			idx := row*numCols + col
+			switch placeholderStyle {
+			case "?":
+				placeholders[idx] = "?"
+			case "$%d":
+				placeholders[idx] = fmt.Sprintf("$%d", idx+1)
+			case "@p%d":
+				placeholders[idx] = fmt.Sprintf("@p%d", idx+1)
+			default:
+				return nil, fmt.Errorf("unknown placeholder style: %s for dbVendor: %s", placeholderStyle, dbVendor)
+			}
+		}
+	}
+	return placeholders, nil
+}

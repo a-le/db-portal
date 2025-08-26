@@ -4,10 +4,9 @@ package types
 
 const (
 	DBVendorClickHouse = "clickhouse"
-	//DBVendorFirebird   DBVendor = "firebird"
-	DBVendorMySQL    = "mysql"
-	DBVendorMariaDB  = "mariadb"
-	DBVendorMSSQL    = "mssql"
-	DBVendorPostgres = "postgresql"
-	DBVendorSQLite   = "sqlite3"
+	DBVendorMySQL      = "mysql"
+	DBVendorMariaDB    = "mariadb"
+	DBVendorMSSQL      = "mssql"
+	DBVendorPostgres   = "postgresql"
+	DBVendorSQLite     = "sqlite3"
 )

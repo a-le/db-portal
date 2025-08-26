@@ -6,13 +6,13 @@ import (
 	"io"
 )
 
-func NewRowReader(ep DataEndpoint, conn *sql.Conn, file io.Reader) (RowReader, error) {
+func NewRowReader(ep EndPoint, conn *sql.Conn, file io.Reader) (RowReader, error) {
 	switch ep.Type {
 	case "table":
 		query := "select * from " + ep.Table
-		return NewDBRowReader(conn, query)
+		return NewDBRowReader(conn, ep.DBVendor, query)
 	case "query":
-		return NewDBRowReader(conn, ep.Query)
+		return NewDBRowReader(conn, ep.DBVendor, ep.Query)
 	case "file":
 		switch ep.Format {
 		case "csv":
@@ -28,10 +28,11 @@ func NewRowReader(ep DataEndpoint, conn *sql.Conn, file io.Reader) (RowReader, e
 	return nil, fmt.Errorf("unsupported reader. type: %s, format: %s", ep.Type, ep.Format)
 }
 
-func NewRowWriter(ep DataEndpoint, conn *sql.Conn, dbVendor string, file io.Writer, fields []string) (RowWriter, error) {
+func NewRowWriter(ep EndPoint, conn *sql.Conn, file io.Writer, fields []string) (RowWriter, error) {
 	switch ep.Type {
 	case "table":
-		return NewDBRowWriter(conn, dbVendor, ep.Table, fields)
+		createTable := (ep.IsNewTable == "1")
+		return NewDBRowWriter(conn, ep.DBVendor, ep.Table, createTable, fields)
 	case "file":
 		switch ep.Format {
 		case "csv":

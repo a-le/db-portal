@@ -2,15 +2,15 @@ function TableInput() {
     return {
         tables: null,
         reset: function () {
-            this.tables = null;
+            this.tables = null
         },
         getTables: function (dsName, schema) {
             if (dsName === "")
-                return this.reset();
+                return this.reset()
 
             const params = { dsName, command: "tables" };
             if (schema && schema !== "") 
-                params.schema = schema;
+                params.schema = schema
 
             m.request({
                 method: "GET",
@@ -18,31 +18,31 @@ function TableInput() {
                 headers: App.getAuthHeaders(),
                 params
             }).then((response) => {
-                this.tables = response.data;
+                this.tables = response.data
             });
         },
         view: function (vnode) {
             if (!this.tables || !this.tables.rows.length)
-                return null;
+                return null
 
-            const { onChange, namePrefix, value = "" } = vnode.attrs || {};
-            const name = namePrefix ? `${namePrefix}[table]` : "table-select";
+            const { onChange, namePrefix, value = "" } = vnode.attrs || {}
+            const name = namePrefix ? `${namePrefix}[table]` : "table-select"
             const options = [
                 { value: "", label: "select table…" },
                 ...this.tables.rows.map(row => ({
                     value: row[0],
                     label: row[0]
                 }))
-            ];
+            ]
             return m(SelectInput, {
                 name,
                 value,
                 options,
-                title: "set a table.",
+                title: "select a table.",
                 onchange: (e) => {
-                    if (onChange) onChange(e.target.value);
+                    if (onChange) onChange(e.target.value)
                 }
-            });
+            })
         }
-    };
+    }
 }

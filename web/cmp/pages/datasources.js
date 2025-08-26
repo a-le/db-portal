@@ -170,13 +170,13 @@ function DatasourcesPage() {
                                 }
                             })
                         ),
-                        m("table.mt-10", { style: { minWidth: "500px" } },
+                        m("table.mt-10", { style: "min-width: 500px" },
                             m("thead",
                                 m("tr", [
                                     m("th", "vendor"),
                                     m("th", "name"),
                                     m("th", "location"),
-                                    App.getIsAdmin() && m("th", "action"),
+                                    m("th", "action"),
                                 ])
                             ),
                             m("tbody",
@@ -191,7 +191,7 @@ function DatasourcesPage() {
                                             m(Cell, { val: row.location, type: "string" }),
 
                                             // remove data source
-                                            App.getIsAdmin() && m("td.tar",
+                                            m("td.tar",
                                                 m("button[type=button]", {
                                                     title: "remove",
                                                     onclick: (e) => {
@@ -205,7 +205,6 @@ function DatasourcesPage() {
                         ),
 
                         // allow data source to user 
-                        App.getIsAdmin() &&
                         m("div.mt-20",
                             m("label",
                                 m("span", [
@@ -241,12 +240,12 @@ function DatasourcesPage() {
                         this.postDatasources(name, vendor, location)
                             .then(() => {
                                 e.target.reset();
-                            });;
+                            })
                     }
                 },
                     m("fieldset",
                         m("legend", "add a new data source"),
-                        m("table",
+                        m("table", { style: "min-width: 500px" },
                             m("tr",
                                 m("td", {
                                     title: "the label of the data source",
@@ -339,6 +338,7 @@ function DatasourcesPage() {
                                 m("td", "password:"),
                                 m("td", m("input[type=password]", {
                                     name: "password",
+                                    autocomplete: "off",
                                     required: 1,
                                 }))
                             ),
@@ -351,7 +351,15 @@ function DatasourcesPage() {
                     )
                 ),
 
-            ];
+                // m("div.mt-20",
+                //     m("h4", "Access Control Rules for non-admin users:"),
+                //     m("ul",
+                //         m("li", "This page is limited: users can only see their allowed data sources."),
+                //         m("li", "DSN locations are only displayed if the database vendor is SQLite3.")
+                //     ),
+                //     m("pre.mt-20", "This page has limited features. \nFor operations not covered here, you can use SQL on the internal DB.")
+                // )
+            ]
         }
     }
 }

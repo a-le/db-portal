@@ -51,7 +51,6 @@ function LoginForm() {
                             m("label", { for: "username" }, "username"),
                             m("input[type=text]", {
                                 id: "username",
-                                //autocomplete: "off",
                                 required: 1,
                                 oncreate: vnode => vnode.dom.focus()
                             })
@@ -61,7 +60,7 @@ function LoginForm() {
                             m("input[type=password]", {
                                 id: "password",
                                 required: 1,
-                                autocomplete: "new-password",
+                                autocomplete: "off",
                             })
                         ]),
                         m("button[type=submit].mt-15", "login"),

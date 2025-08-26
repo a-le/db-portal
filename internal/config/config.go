@@ -84,12 +84,12 @@ func NewConfigPath(arg string) (path string, err error) {
 	if len(arg) > 1 {
 		path = filepath.Clean(arg)
 	} else {
-		// path is a /conf folder in the executable folder
+		// path is a folder in the executable folder
 		var executablePath string
 		if executablePath, err = os.Executable(); err != nil {
 			return
 		}
-		path = filepath.Join(filepath.Dir(executablePath), "conf")
+		path = filepath.Join(filepath.Dir(executablePath), "config")
 	}
 
 	_, err = os.Stat(path)

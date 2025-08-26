@@ -13,7 +13,7 @@ CREATE TABLE user (
     isadmin int not null default 0,
     pwdhash text not null,
     unique (name),
-    check (case id when 1 then isadmin else 1 end = 1)
+    check (id != 1 OR isadmin = 1) -- ensure first user is always admin
 );
 
 CREATE TABLE ds (

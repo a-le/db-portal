@@ -8,6 +8,8 @@ import (
 	"unicode/utf8"
 )
 
+var Commands CommandsConfig
+
 // Struct for commands.yaml
 type CommandsConfig map[string]struct {
 	Clickhouse string `yaml:"clickhouse"`

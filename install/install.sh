@@ -1,6 +1,8 @@
 #!/bin/bash
-
 set -e
+
+command -v curl >/dev/null 2>&1 || { echo "curl is required"; exit 1; }
+command -v tar >/dev/null 2>&1 || { echo "tar is required"; exit 1; }
 
 read -p "Install in the current folder? (y/n) " answer
 if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
@@ -27,20 +29,35 @@ echo "Downloading $binary..."
 curl -LO "https://github.com/a-le/db-portal/releases/download/$latest_tag/$binary"
 chmod +x $binary
 
+echo "Rename $binary to db-portal"
+mv "$binary" db-portal
+
 echo "Downloading source archive..."
 curl -LO "https://github.com/a-le/db-portal/archive/refs/tags/$latest_tag.tar.gz"
 
-folder_name="db-portal-${latest_tag#v}"
+# The top-level directory inside the archive follows this naming convention: {repository-name}-{tag-name-without-v-prefix}
+releaseTempFolder="db-portal-${latest_tag#v}"
 
-echo "Extracting conf/ and web/ folders..."
-tar --extract --file="$latest_tag.tar.gz" \
-  --wildcards \
-  --strip-components=1 \
-  "$folder_name/conf/*" "$folder_name/web/*"
+echo "Extract archive..."
+tar -xzf "$latest_tag.tar.gz" 
+
+echo "Write config files, keeping existing files..."
+mkdir -p config
+for file in "$releaseTempFolder"/config/*; do
+  base=$(basename "$file")
+  if [ ! -e "config/$base" ]; then
+    cp "$file" "config/$base"
+  fi
+done
+
+echo "Write web files, overwriting existing files..."
+mkdir -p web
+cp -r "$releaseTempFolder"/web/* web/
 
 echo "Cleaning up..."
+rm -rf "$releaseTempFolder"
 rm "$latest_tag.tar.gz"
 
 echo "Installation complete."
-echo "Run the app with: ./db-portal-linux or ./db-portal-darwin"
-echo 'add the --set-master-password="your password" argument on the first run'
+echo 'Run the app and set master password with ./db-portal --set-master-password="your password"'
+echo 'the --set-master-password argument is only needed on the first run, or to reset the master password'

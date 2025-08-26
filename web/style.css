@@ -300,6 +300,9 @@ input, button, select, label, .fake-input {
   padding: 0 5px;
   vertical-align: bottom;
 }
+textarea {
+    padding: 0 5px;
+}
 
 button:disabled, select:disabled,
 label:has(+ button:disabled), label:has(+ select:disabled) {
@@ -724,6 +727,10 @@ code {
   min-height: 1.5em;
   white-space: pre;
   display: block;
+}
+
+.pointer {
+  cursor: pointer;
 }
 
 /* General styling for the switch container */

@@ -3,7 +3,9 @@ package copydata
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
+	"time"
 )
 
 // csvRowReader implements RowReader for CSV files.
@@ -11,7 +13,6 @@ type csvRowReader struct {
 	r      *csv.Reader
 	fields []string
 	types  []string
-	closer io.Closer // optional, for closing file if needed
 }
 
 func NewCSVRowReader(file io.Reader) (RowReader, error) {
@@ -26,15 +27,9 @@ func NewCSVRowReader(file io.Reader) (RowReader, error) {
 		return nil, err
 	}
 
-	var closer io.Closer
-	if c, ok := file.(io.Closer); ok {
-		closer = c
-	}
-
 	return &csvRowReader{
 		r:      r,
 		fields: fields,
-		closer: closer,
 	}, nil
 }
 
@@ -52,17 +47,10 @@ func (c *csvRowReader) ReadRow() (Row, error) {
 
 func (c *csvRowReader) Fields() []string { return c.fields }
 func (c *csvRowReader) Types() []string  { return c.types }
-func (c *csvRowReader) Close() error {
-	if c.closer != nil {
-		return c.closer.Close()
-	}
-	return nil
-}
 
 // csvRowWriter implements RowWriter for CSV files.
 type csvRowWriter struct {
 	w           *csv.Writer
-	closer      io.Closer // optional, for closing file if needed
 	wroteHeader bool
 }
 
@@ -72,14 +60,8 @@ func NewCSVRowWriter(file io.Writer) (RowWriter, error) {
 	}
 	w := csv.NewWriter(file)
 
-	var closer io.Closer
-	if c, ok := file.(io.Closer); ok {
-		closer = c
-	}
-
 	return &csvRowWriter{
-		w:      w,
-		closer: closer,
+		w: w,
 	}, nil
 }
 
@@ -94,7 +76,7 @@ func (c *csvRowWriter) WriteFields(fields []string, types []string) error {
 	return nil
 }
 
-func (c *csvRowWriter) WriteRow(row Row) error {
+func (c *csvRowWriter) WriteRow(row Row) (rowsWritten int, err error) {
 	rec := make([]string, len(row))
 	for i, v := range row {
 		if v == nil {
@@ -103,13 +85,44 @@ func (c *csvRowWriter) WriteRow(row Row) error {
 			rec[i] = toString(v)
 		}
 	}
-	return c.w.Write(rec)
+	if err = c.w.Write(rec); err != nil {
+		return
+	}
+	rowsWritten = 1
+	return
 }
 
-func (c *csvRowWriter) Close() error {
+func (c *csvRowWriter) Flush() (rowsWritten int, err error) {
 	c.w.Flush()
-	if c.closer != nil {
-		return c.closer.Close()
+	return
+}
+
+// toString converts any value to its string representation.
+// If the value is a string, it returns it as-is.
+// If the value is a []byte, it converts the bytes to a string.
+// For simples types like int, float, bool, it uses fmt.Sprint to convert to string.
+// For all other types, it marshals the value to JSON and returns the resulting JSON string.
+func toString(v any) string {
+	switch t := v.(type) {
+	case string:
+		return t
+	case []byte:
+		return string(t)
+	case int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64,
+		bool,
+		complex64, complex128:
+		return fmt.Sprint(t)
+	case time.Time:
+		return t.Format(time.RFC3339)
+	case time.Duration:
+		return t.String()
+	case time.Month:
+		return t.String()
+	case time.Weekday:
+		return t.String()
+	default:
+		return fmt.Sprint(t)
 	}
-	return nil
 }

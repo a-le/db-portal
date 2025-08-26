@@ -30,39 +30,41 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Helper to extract endpoint from form
-	parseEndpoint := func(prefix string) copydata.DataEndpoint {
-		switch r.FormValue(prefix + "[type]") {
+	parseEndpoint := func(prefix string) copydata.EndPoint {
+		EPType := r.FormValue(prefix + "[type]")
+		switch EPType {
 		case "table":
-			return copydata.DataEndpoint{
-				Type:   r.FormValue(prefix + "[type]"),
-				DSName: r.FormValue(prefix + "[dsName]"),
-				Schema: r.FormValue(prefix + "[schema]"),
-				Table:  r.FormValue(prefix + "[table]"),
+			return copydata.EndPoint{
+				Type:       EPType,
+				DSName:     r.FormValue(prefix + "[dsName]"),
+				Schema:     r.FormValue(prefix + "[schema]"),
+				Table:      r.FormValue(prefix + "[table]"),
+				IsNewTable: r.FormValue(prefix + "[isNewTable]"),
 			}
 		case "query":
-			return copydata.DataEndpoint{
-				Type:   r.FormValue(prefix + "[type]"),
+			return copydata.EndPoint{
+				Type:   EPType,
 				DSName: r.FormValue(prefix + "[dsName]"),
 				Schema: r.FormValue(prefix + "[schema]"),
 				Query:  r.FormValue(prefix + "[query]"),
 			}
 		case "file":
-			return copydata.DataEndpoint{
-				Type:   r.FormValue(prefix + "[type]"),
+			return copydata.EndPoint{
+				Type:   EPType,
 				Format: r.FormValue(prefix + "[format]"),
 			}
 		}
-		return copydata.DataEndpoint{}
+		return copydata.EndPoint{}
 	}
 
 	// Retrieve request from form
-	var req copydata.DataTransferRequest
-	req.Origin = parseEndpoint("origin")
-	req.Destination = parseEndpoint("destination")
+	var req copydata.CopyRequest
+	req.OriginEP = parseEndpoint("origin")
+	req.DestEP = parseEndpoint("destination")
 
 	// Retrieve file from form
 	var originFile io.Reader
-	if req.Origin.Type == "file" {
+	if req.OriginEP.Type == "file" {
 		file, _, err := r.FormFile("origin[file]")
 		if err != nil || file == nil {
 			resp.Error = "failed to get origin_file"
@@ -78,10 +80,10 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 	// Prepare origin database connection
 	var originConn *sql.Conn
 	currentUsername := contextkeys.UsernameFromContext(r.Context())
-	if req.Origin.DSName != "" {
-		ds, err := s.Store.RequireUserDataSource(currentUsername, currentUsername, req.Origin.DSName)
+	if req.OriginEP.DSName != "" {
+		ds, err := s.Store.RequireUserDataSource(currentUsername, currentUsername, req.OriginEP.DSName)
 		if err != nil {
-			resp.Error = fmt.Sprintf("origin data source %v not found or not allowed", req.Origin.DSName)
+			resp.Error = fmt.Sprintf("origin data source %v not found or not allowed", req.OriginEP.DSName)
 			response.WriteJSON(w, http.StatusNotFound, &resp)
 			return
 		}
@@ -90,16 +92,31 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 			response.WriteJSON(w, http.StatusInternalServerError, &resp)
 			return
 		}
+		req.OriginEP.DBVendor = ds.Vendor
+
+		// set schema
+		schema := req.OriginEP.Schema
+		if schema != "" {
+			setSchema, args, err := s.CommandsConfig.Data.Command("set-schema", req.OriginEP.DBVendor, []string{schema})
+			if err != nil {
+				resp.Error = err.Error()
+				response.WriteJSON(w, http.StatusInternalServerError, &resp)
+				return
+			}
+			if _, err = originConn.ExecContext(r.Context(), setSchema, args...); err != nil {
+				resp.Error = err.Error()
+				response.WriteJSON(w, http.StatusInternalServerError, &resp)
+				return
+			}
+		}
 	}
 
 	// Prepare destination database connection
 	var destConn *sql.Conn
-	var dbVendor string
-	if req.Destination.DSName != "" {
-		ds, err := s.Store.RequireUserDataSource(currentUsername, currentUsername, req.Destination.DSName)
-		dbVendor = ds.Vendor
+	if req.DestEP.DSName != "" {
+		ds, err := s.Store.RequireUserDataSource(currentUsername, currentUsername, req.DestEP.DSName)
 		if err != nil {
-			resp.Error = fmt.Sprintf("destination data source %v not found or not allowed", req.Destination.DSName)
+			resp.Error = fmt.Sprintf("destination data source %v not found or not allowed", req.DestEP.DSName)
 			response.WriteJSON(w, http.StatusNotFound, &resp)
 			return
 		}
@@ -108,10 +125,27 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 			response.WriteJSON(w, http.StatusInternalServerError, &resp)
 			return
 		}
+		req.DestEP.DBVendor = ds.Vendor
+
+		// set schema
+		schema := req.DestEP.Schema
+		if schema != "" {
+			setSchema, args, err := s.CommandsConfig.Data.Command("set-schema", req.DestEP.DBVendor, []string{schema})
+			if err != nil {
+				resp.Error = err.Error()
+				response.WriteJSON(w, http.StatusInternalServerError, &resp)
+				return
+			}
+			if _, err = destConn.ExecContext(r.Context(), setSchema, args...); err != nil {
+				resp.Error = err.Error()
+				response.WriteJSON(w, http.StatusInternalServerError, &resp)
+				return
+			}
+		}
 	}
 
 	// Create row reader based on origin endpoint
-	src, err := copydata.NewRowReader(req.Origin, originConn, originFile)
+	src, err := copydata.NewRowReader(req.OriginEP, originConn, originFile)
 	if err != nil {
 		resp.Error = err.Error()
 		response.WriteJSON(w, http.StatusBadRequest, &resp)
@@ -120,10 +154,10 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create row writer based on destination endpoint
 	var destWriter io.Writer
-	if req.Destination.Type == "file" {
+	if req.DestEP.Type == "file" {
 		destWriter = w // use http.ResponseWriter as destWriter to stream file to client
 	}
-	dst, err := copydata.NewRowWriter(req.Destination, destConn, dbVendor, destWriter, src.Fields())
+	dst, err := copydata.NewRowWriter(req.DestEP, destConn, destWriter, src.Fields())
 	if err != nil {
 		resp.Error = err.Error()
 		response.WriteJSON(w, http.StatusBadRequest, &resp)
@@ -131,10 +165,10 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Prepare to stream file.
-	if req.Destination.Type == "file" {
-		ext := req.Destination.Format
+	if req.DestEP.Type == "file" {
+		ext := req.DestEP.Format
 		if len(ext) > 4 {
-			ext = req.Destination.Format[:4]
+			ext = req.DestEP.Format[:4]
 		}
 		w.Header().Set("Content-Disposition", "attachment; filename=export_"+time.Now().Format("20060102-150405")+"."+ext)
 		w.Header().Set("Content-Type", "application/octet-stream")
@@ -144,7 +178,7 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 	resp.Data.Reads, resp.Data.Writes, err = copydata.CopyData(src, dst)
 
 	// End file response
-	if req.Destination.Type == "file" {
+	if req.DestEP.Type == "file" {
 		if err != nil {
 			if resp.Data.Writes == 0 {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

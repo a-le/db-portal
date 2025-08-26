@@ -10,23 +10,30 @@ Write-Host "Fetching latest release info..."
 $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/a-le/db-portal/releases/latest"
 $latestTag = $releaseInfo.tag_name
 
+# The top-level directory inside the archive follows this naming convention: {repository-name}-{tag-name-without-v-prefix}
+$releaseTempFolder = "db-portal-$($latestTag -replace '^v', '')"
+
 Write-Host "Latest version detected: $latestTag"
 
-Write-Host "Downloading db-portal.exe..."
+Write-Host "Downloading db-portal.exe (download is slow, please wait)..."
 Invoke-WebRequest -Uri "https://github.com/a-le/db-portal/releases/download/$latestTag/db-portal.exe" -OutFile "db-portal.exe"
 
-Write-Host "Downloading release ZIP..."
+Write-Host "Downloading release ZIP (download is slow, please wait)..."
 Invoke-WebRequest -Uri "https://github.com/a-le/db-portal/archive/refs/tags/$latestTag.zip" -OutFile "$latestTag.zip"
 
-Write-Host "Extracting conf/ and web/ folders..."
-Expand-Archive -Path "$latestTag.zip" -DestinationPath "db-portal-extracted"
+Write-Host "Extracting release ZIP..."
+Expand-Archive -Path "$latestTag.zip" -DestinationPath "."
 
-Copy-Item -Recurse -Path "db-portal-extracted\db-portal-$($latestTag.TrimStart('v'))\conf" -Destination ".\conf"
-Copy-Item -Recurse -Path "db-portal-extracted\db-portal-$($latestTag.TrimStart('v'))\web" -Destination ".\web"
+Write-Host "Write config files, keeping existing files..."
+Copy-Item -Path "$releaseTempFolder\config" -Destination ".\config"
+
+Write-Host "Write web files, overwriting existing files..."
+Copy-Item -Force -Recurse -Path "$releaseTempFolder\web" -Destination ".\web"
 
 Write-Host "Cleaning up..."
 Remove-Item "$latestTag.zip"
-Remove-Item -Recurse -Force "db-portal-extracted"
+Remove-Item -Recurse -Force "$releaseTempFolder"
 
 Write-Host "Installation complete."
-Write-Host 'Run the app with: .\db-portal.exe (add --set-master-password="your password" argument on the first run)'
+Write-Host 'Run the app and set master password with: .\db-portal.exe --set-master-password="your password"'
+Write-Host 'the --set-master-password argument is only needed on the first run, or to reset the master password'

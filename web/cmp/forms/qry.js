@@ -135,7 +135,7 @@ const QryForm = {
                                     App.dataTransferAction = true
                                     App.pageState.set("copy")
                                 }
-                            }, "set as origin"),
+                            }, "set as source"),
                         ),
 
                     ),

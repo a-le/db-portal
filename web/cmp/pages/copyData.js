@@ -1,9 +1,5 @@
 function CopyDataPage() {
     return {
-infoText: `This feature is still experimental.
-- A new tab will open upon submission, either showing a report of the copied data or triggering a file download.
-- There are no optimizations in the copy process to DB table; INSERT operations are performed per row.
-`,
         origin: DataEndpointForm(),
         destination: DataEndpointForm(),
         getDestinationType: () => {
@@ -11,13 +7,23 @@ infoText: `This feature is still experimental.
             return sel && sel.value;
         },
         view: function () {
+            const self = this;
             // Standard HTML form for streamed file upload.
             return m("form", {
                 method: "POST",
                 action: "/api/copy",
-                target: "exportpage", //this.getDestinationType() === "file" ? "exportpage" : "_self",
+                target: "exportpage", 
                 enctype: "multipart/form-data",
                 onsubmit: function (e) {
+                    const popup = window.open('', 'exportpage', 'width=800,height=600');
+                    const message = self.getDestinationType() === "file" 
+                    ? "Preparing file. The download will start soon, please be patient..." 
+                    : "Copying data. A report will be displayed, please be patient..."
+                    if (popup) {
+                        popup.document.write(`<html><head><style>body { color: #222; background: #fff; }@media (prefers-color-scheme: dark) {body { color: #eee; background: #222; }}</style></head><body><div>${message}</div><button onclick="window.close()">Close</button></body></html>`);
+                        popup.document.close();
+                    }
+                    e.target.setAttribute('target', 'exportpage');
                     // Let the browser submit the form
                     return true;
                 }
@@ -25,7 +31,7 @@ infoText: `This feature is still experimental.
                 m("input[type=hidden][name=jwt]", { value: localStorage.getItem(JWT_KEY) }),
 
                 m("fieldset.mb-20.w-600.h-130", { style: "display: block" },
-                    m("legend", "Origin (copy from)"),
+                    m("legend", "Source (copy from)"),
                     m(this.origin, { endPointType: "origin" })
                 ),
                 m("fieldset.mb-20.w-600.h-130", { style: "display: block" },
@@ -38,7 +44,7 @@ infoText: `This feature is still experimental.
                         disabled: this.executing
                     }, this.getDestinationType() === "file" ? "download" : "copy data")
                 ),
-                m("pre", this.infoText)
+                //m("pre", this.infoText)
             ]);
         }
     };

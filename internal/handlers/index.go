@@ -42,8 +42,7 @@ func (s *Services) IndexHandler(w http.ResponseWriter, r *http.Request) {
 			content += fmt.Sprintf("import \"%s\";\n", path)
 		}
 		os.WriteFile(meta.ImportJSPath, []byte(content), 0644)
-
-		fmt.Printf("JS changes detected, %s and %s file content have be updated.\n", meta.MinjsPath, meta.ImportJSPath)
+		fmt.Printf("JS changes detected. The contents of %s and %s have be updated.\n", meta.MinjsPath, meta.ImportJSPath)
 	}
 
 	// prepare template vars

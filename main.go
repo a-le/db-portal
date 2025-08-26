@@ -30,8 +30,13 @@ func main() {
 		log.Fatalf("error getting config path: %s", err)
 	}
 
+	dataPath, err := config.NewConfigPath(*configPathFlag)
+	if err != nil {
+		log.Fatalf("error getting config path: %s", err)
+	}
+
 	// Initialize internal DB store
-	store, err := internaldb.NewStore(configPath)
+	store, err := internaldb.NewStore(dataPath)
 	if err != nil {
 		log.Fatalf("error initializing connections: %v", err)
 	}

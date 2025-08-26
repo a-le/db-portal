@@ -2,16 +2,17 @@ package copydata
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
 )
 
+// jsonRowReader
 type jsonRowReader struct {
 	scanner   *bufio.Scanner
 	fields    []string
 	types     []string
-	closer    io.Closer
 	firstRow  map[string]any // buffer for the first row
 	firstRead bool           // has the first row been read?
 }
@@ -21,45 +22,53 @@ func NewJSONRowReader(r io.Reader) (RowReader, error) {
 		return nil, errors.New("reader is nil")
 	}
 	scanner := bufio.NewScanner(r)
-	var closer io.Closer
-	if c, ok := r.(io.Closer); ok {
-		closer = c
-	}
 
 	// Read the first line to get fields
 	var firstRow map[string]any
 	var fields []string
-	// for scanner.Scan() {
-	// 	line := scanner.Bytes()
-	// 	if len(line) == 0 {
-	// 		continue // skip empty lines
-	// 	}
-	// 	if err := json.Unmarshal(line, &firstRow); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	for k := range firstRow {
-	// 		fields = append(fields, k)
-	// 	}
-	// 	break
-	// }
-	scanner.Scan()
+
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+		return &jsonRowReader{
+			scanner:   scanner,
+			fields:    fields,
+			firstRow:  nil,
+			firstRead: false,
+		}, nil
+	}
 	line := scanner.Bytes()
+
+	// Use a Decoder to preserve field order
+	dec := json.NewDecoder(bytes.NewReader(line))
+	t, err := dec.Token()
+	if err != nil || t != json.Delim('{') {
+		return nil, errors.New("expected JSON object")
+	}
+	for dec.More() {
+		t, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		if key, ok := t.(string); ok {
+			fields = append(fields, key)
+			// skip value
+			if err := dec.Decode(&json.RawMessage{}); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New("expected string key")
+		}
+	}
+	// Unmarshal values as before
 	if err := json.Unmarshal(line, &firstRow); err != nil {
 		return nil, err
 	}
-	for k := range firstRow {
-		fields = append(fields, k)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	// If no data, fields will be nil, that's ok
 
 	return &jsonRowReader{
 		scanner:   scanner,
 		fields:    fields,
-		closer:    closer,
 		firstRow:  firstRow,
 		firstRead: false,
 	}, nil
@@ -98,17 +107,11 @@ func (j *jsonRowReader) ReadRow() (Row, error) {
 
 func (j *jsonRowReader) Fields() []string { return j.fields }
 func (j *jsonRowReader) Types() []string  { return j.types }
-func (j *jsonRowReader) Close() error {
-	if j.closer != nil {
-		return j.closer.Close()
-	}
-	return nil
-}
 
+// jsonRowWriter
 type jsonRowWriter struct {
 	enc     *json.Encoder
 	fields  []string
-	closer  io.Closer
 	written bool
 }
 
@@ -116,43 +119,40 @@ func NewJSONRowWriter(w io.Writer) (RowWriter, error) {
 	if w == nil {
 		return nil, errors.New("writer is nil")
 	}
-	var closer io.Closer
-	if c, ok := w.(io.Closer); ok {
-		closer = c
-	}
 	return &jsonRowWriter{
-		enc:    json.NewEncoder(w),
-		closer: closer,
+		enc: json.NewEncoder(w),
 	}, nil
 }
 
 func (j *jsonRowWriter) WriteFields(fields []string, types []string) error {
-	// if j.written {
-	// 	return nil
-	// }
 	j.fields = append([]string{}, fields...)
 	j.written = true
 	return nil
 }
 
-func (j *jsonRowWriter) WriteRow(row Row) error {
-	// if j.fields == nil {
-	// 	return errors.New("fields not set")
-	// }
-	obj := make(map[string]any, len(j.fields))
+func (j *jsonRowWriter) WriteRow(row Row) (rowsWritten int, err error) {
+	var buf bytes.Buffer
+	buf.WriteByte('{')
 	for i, f := range j.fields {
-		if i < len(row) {
-			obj[f] = row[i]
-		} else {
-			obj[f] = nil
+		if i > 0 {
+			buf.WriteByte(',')
 		}
+		key, _ := json.Marshal(f)
+		buf.Write(key)
+		buf.WriteByte(':')
+		val := []byte("null")
+		if i < len(row) {
+			val, _ = json.Marshal(row[i])
+		}
+		buf.Write(val)
 	}
-	return j.enc.Encode(obj)
+	buf.WriteByte('}')
+	err = j.enc.Encode(json.RawMessage(buf.Bytes()))
+	if err != nil {
+		return
+	}
+	rowsWritten = 1
+	return
 }
 
-func (j *jsonRowWriter) Close() error {
-	if j.closer != nil {
-		return j.closer.Close()
-	}
-	return nil
-}
+func (j *jsonRowWriter) Flush() (rowsWritten int, err error) { return }

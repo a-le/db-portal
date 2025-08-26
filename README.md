@@ -10,10 +10,12 @@
 Several DB vendors are supported, as well as CSV, JSON, and XLSX file formats.
 
 db-portal is designed for both solo and multi-user use.  
-Whether you need a simple tool for personal database management or a multi-user solution, db-portal aims to provides a flexible and efficient way to interact.
+Whether you need a simple tool for personal database management or a multi-user solution, it aims to provides a flexible and efficient way to interact.
 
-## Demo (old v0.2.0 version)
-![Loading animation](.github/demo.gif)
+## Demo (v0.3.1)
+![Loading animation](.github/dataSources.gif)
+![Loading animation](.github/sqlEditor.gif)
+![Loading animation](.github/copyData.gif)
 
 ## Table of Contents
 - [Features](#features)
@@ -33,18 +35,13 @@ Whether you need a simple tool for personal database management or a multi-user 
 - Browse data dictionaries (tables, columns, views, procedures)
 
 - ETL features
-  - Use a GUI for ETL operations. Set data sources as origin and destination, click submit and voilà ! 
+  - Use a GUI for ETL operations. Set source and destination, click submit and voilà ! 
   - Data sources supported as source or destination: DB table, DB query, .json (2 formats supported), .xlsx, .csv 
 
 - Solo or multi-user support
   - Solo: Simply add data sources (DSN), assign them to your user, and start using them.
   - Multi-user: Add users and DSN, then assign DSN to specific users for controlled access.
   - Regular users can only access the data sources and connections assigned to them, whereas admins have unrestricted access to all resources.
-
-- Configurable
-  - Modify server configuration easily using a YAML file
-  - Manage users and data sources (only database DSN at the moment)
-  - Customize the data dictionary UI by editing SQL commands in `conf/commands.yaml`
 
 - Implements industry-standard authentication and security practices
   - Server based with HTTPS support
@@ -59,7 +56,7 @@ Whether you need a simple tool for personal database management or a multi-user 
   - Custom JavaScript and CSS using a lightweight virtual DOM library (Mithril.js)
 
 - Cross-platform support: Windows, Linux, Mac OS and other OSes supported by Go
-- **see [CHANGELOG.md](https://raw.githubusercontent.com/a-le/db-portal/main/CHANGELOG.md) for latest features added to rolling release**
+- **see [CHANGELOG.md](https://raw.githubusercontent.com/a-le/db-portal/main/CHANGELOG.md) for latest features**
 
 
 ## App maturity
@@ -99,7 +96,7 @@ powershell -File install.ps1
 - Improve integration of ETL / Data copy features
 - Add DuckDB support
 - Use DuckDB for ETL task of reading XLSX files ?
-- Support base folders as data source for files
+- Support base folders as data source for files ?
 - Replace CodeMirror by Prism (syntax highligthning) + custom js/mithril editor.
 - use github actions for CI
 - Load and save query/script files

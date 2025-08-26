@@ -2,200 +2,186 @@ package copydata
 
 import (
 	"errors"
+	"fmt"
 	"io"
-	"os"
 
 	"github.com/tealeg/xlsx"
 )
 
-// xlsxRowReader implements RowReader for XLSX files.
+// xlsxRowReader
 type xlsxRowReader struct {
-	file   *xlsx.File
-	sheet  *xlsx.Sheet
-	rowIdx int
-	fields []string
-	types  []string
-	closer io.Closer // optional, for closing file if needed
+	file     *xlsx.File
+	sheet    *xlsx.Sheet
+	fields   []string
+	types    []string
+	rowIndex int
 }
 
-// Helper: writes io.Reader to temp file, returns *os.File and size
-func readerToTempFile(r io.Reader) (*os.File, int64, error) {
-	tmpfile, err := os.CreateTemp("", "user-upload-*.xlsx")
-	if err != nil {
-		return nil, 0, err
-	}
-	written, err := io.Copy(tmpfile, r)
-	if err != nil {
-		tmpfile.Close()
-		os.Remove(tmpfile.Name())
-		return nil, 0, err
-	}
-	_, err = tmpfile.Seek(0, io.SeekStart)
-	if err != nil {
-		tmpfile.Close()
-		os.Remove(tmpfile.Name())
-		return nil, 0, err
-	}
-	return tmpfile, written, nil
-}
-
-// NewXLSXRowReader accepts io.Reader, writes to a temp file, and opens as io.ReaderAt.
 func NewXLSXRowReader(r io.Reader) (RowReader, error) {
 	if r == nil {
 		return nil, errors.New("reader is nil")
 	}
-	tmpfile, size, err := readerToTempFile(r)
+
+	// Read all data from reader into a byte slice
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 
-	file, err := xlsx.OpenReaderAt(tmpfile, size)
+	// Open XLSX from byte slice
+	file, err := xlsx.OpenBinary(data)
 	if err != nil {
-		tmpfile.Close()
-		os.Remove(tmpfile.Name())
 		return nil, err
 	}
+
 	if len(file.Sheets) == 0 {
-		tmpfile.Close()
-		os.Remove(tmpfile.Name())
-		return nil, errors.New("xlsx: no sheets found")
+		return nil, errors.New("no sheets found in XLSX file")
 	}
+
+	// Use the first sheet
 	sheet := file.Sheets[0]
 	if len(sheet.Rows) == 0 {
-		tmpfile.Close()
-		os.Remove(tmpfile.Name())
-		return nil, errors.New("xlsx: no rows found")
+		return &xlsxRowReader{
+			file:     file,
+			sheet:    sheet,
+			fields:   nil,
+			types:    nil,
+			rowIndex: 0,
+		}, nil
 	}
-	headerRow := sheet.Rows[0]
-	fields := make([]string, len(headerRow.Cells))
-	for i, cell := range headerRow.Cells {
-		fields[i] = cell.String()
-	}
-	xr := &xlsxRowReader{
-		file:   file,
-		sheet:  sheet,
-		rowIdx: 1,
-		fields: fields,
-		closer: &tempFileCloser{File: tmpfile},
-	}
-	return xr, nil
-}
 
-// tempFileCloser closes and removes the temp file.
-type tempFileCloser struct {
-	*os.File
-}
+	// Use first row as field names
+	firstRow := sheet.Rows[0]
+	fields := make([]string, len(firstRow.Cells))
+	for i, cell := range firstRow.Cells {
+		if cell != nil {
+			fields[i] = cell.String()
+		} else {
+			fields[i] = ""
+		}
+	}
 
-func (t *tempFileCloser) Close() error {
-	name := t.Name()
-	if err := t.File.Close(); err != nil {
-		return err
-	}
-	if err := os.Remove(name); err != nil {
-		return err
-	}
-	return nil
+	return &xlsxRowReader{
+		file:     file,
+		sheet:    sheet,
+		fields:   fields,
+		types:    nil, // XLSX doesn't provide type information
+		rowIndex: 1,   // Start from second row (skip header)
+	}, nil
 }
 
 func (x *xlsxRowReader) ReadRow() (Row, error) {
-	if x.rowIdx >= len(x.sheet.Rows) {
+	if x.sheet == nil || x.rowIndex >= len(x.sheet.Rows) {
 		return nil, io.EOF
 	}
-	rowCells := x.sheet.Rows[x.rowIdx].Cells
+
+	xlsxRow := x.sheet.Rows[x.rowIndex]
+	x.rowIndex++
+
 	row := make(Row, len(x.fields))
 	for i := range x.fields {
-		if i < len(rowCells) {
-			row[i] = rowCells[i].Value
+		if i < len(xlsxRow.Cells) && xlsxRow.Cells[i] != nil {
+			cell := xlsxRow.Cells[i]
+			// Try to get the value in the most appropriate type
+			if cell.Type() == xlsx.CellTypeNumeric {
+				if val, err := cell.Float(); err == nil {
+					row[i] = val
+				} else {
+					row[i] = cell.String()
+				}
+			} else if cell.Type() == xlsx.CellTypeBool {
+				row[i] = cell.Bool()
+			} else {
+				row[i] = cell.String()
+			}
 		} else {
 			row[i] = nil
 		}
 	}
-	x.rowIdx++
+
 	return row, nil
 }
 
 func (x *xlsxRowReader) Fields() []string { return x.fields }
 func (x *xlsxRowReader) Types() []string  { return x.types }
-func (x *xlsxRowReader) Close() error {
-	if x.closer != nil {
-		return x.closer.Close()
-	}
-	return nil
-}
 
-// xlsxRowWriter implements RowWriter for XLSX files.
+// xlsxRowWriter
 type xlsxRowWriter struct {
 	file    *xlsx.File
 	sheet   *xlsx.Sheet
 	fields  []string
-	types   []string
-	written bool
-	closer  io.Closer
 	writer  io.Writer
+	written bool
 }
 
-// NewXLSXRowWriter creates a RowWriter for XLSX files.
-// w must be an io.Writer (e.g., *os.File, bytes.Buffer).
 func NewXLSXRowWriter(w io.Writer) (RowWriter, error) {
 	if w == nil {
 		return nil, errors.New("writer is nil")
 	}
+
 	file := xlsx.NewFile()
-	sheet, err := file.AddSheet("1")
+	sheet, err := file.AddSheet("Sheet1")
 	if err != nil {
 		return nil, err
 	}
-	var closer io.Closer
-	if c, ok := w.(io.Closer); ok {
-		closer = c
-	}
+
 	return &xlsxRowWriter{
 		file:   file,
 		sheet:  sheet,
 		writer: w,
-		closer: closer,
 	}, nil
 }
 
 func (x *xlsxRowWriter) WriteFields(fields []string, types []string) error {
-	if x.written {
-		return nil
-	}
 	x.fields = append([]string{}, fields...)
-	x.types = append([]string{}, types...)
-	header := x.sheet.AddRow()
-	for _, f := range x.fields {
-		cell := header.AddCell()
-		cell.SetString(f)
+
+	// Write header row
+	if len(x.fields) > 0 {
+		row := x.sheet.AddRow()
+		for _, field := range x.fields {
+			cell := row.AddCell()
+			cell.Value = field
+		}
+		x.written = true
 	}
-	x.written = true
+
 	return nil
 }
 
-func (x *xlsxRowWriter) WriteRow(row Row) error {
-	if !x.written {
-		return errors.New("fields not set")
-	}
-	r := x.sheet.AddRow()
+func (x *xlsxRowWriter) WriteRow(row Row) (rowsWritten int, err error) {
+	xlsxRow := x.sheet.AddRow()
 	for i := range x.fields {
-		cell := r.AddCell()
+		cell := xlsxRow.AddCell()
 		if i < len(row) && row[i] != nil {
-			cell.SetValue(row[i])
-		} else {
-			cell.SetString("")
+			switch v := row[i].(type) {
+			case string:
+				cell.Value = v
+			case int:
+				cell.SetInt64(int64(v))
+			case int8:
+				cell.SetInt64(int64(v))
+			case int16:
+				cell.SetInt64(int64(v))
+			case int32:
+				cell.SetInt64(int64(v))
+			case int64:
+				cell.SetInt64(v)
+			case float32:
+				cell.SetFloat(float64(v))
+			case float64:
+				cell.SetFloat(v)
+			case bool:
+				cell.SetBool(v)
+			default:
+				cell.Value = fmt.Sprintf("%v", v)
+			}
 		}
 	}
-	return nil
+	return 1, nil
 }
 
-func (x *xlsxRowWriter) Close() error {
-	if x.writer != nil {
-		if err := x.file.Write(x.writer); err != nil {
-			return err
-		}
-	}
-	if x.closer != nil {
-		return x.closer.Close()
-	}
-	return nil
+func (x *xlsxRowWriter) Flush() (rowsWritten int, err error) {
+	// Write the entire file to the writer
+	err = x.file.Write(x.writer)
+	return 0, err
 }

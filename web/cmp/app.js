@@ -50,12 +50,13 @@ const App = {
                             m("span.ml-10", "v", versionInfo.AppVersion),
                         ),
                         m("div.grid-col.ml-auto.mr-auto",
-                            m(".tab.tab-b.mr-30", {
+                            App.getIsAdmin() && 
+                            [m(".tab.tab-b.mr-30", {
                                 class: App.pageState.selectedClass("datasources"),
                                 onclick: () => {
                                     App.pageState.set("datasources");
                                 }
-                            }, m.trust("&#128279;data sources")),
+                            }, m.trust("&#128279;data sources"))],
                             m(".tab.tab-b.mr-30", {
                                 class: App.pageState.selectedClass("query"),
                                 onclick: () => {

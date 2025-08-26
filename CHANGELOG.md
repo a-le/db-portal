@@ -1,13 +1,19 @@
 # Changelog
 
-## v0.3.0-beta **rolling release**
+## v0.3.1
+- **copy data: schema support for DB source/dest**
+- **copy data: batch optimization for DB dest (multi values INSERTs)**
+- **copy data: set header types (SQL canonical types) for jsontabular dest when source is DB**
+- **some refactoring (Go) and bug fixes (Go and JS)**
+
+## v0.3.0-beta
 - **Go code refactoring, cleanup and quality improvment**
 - **New ETL ("copy data" page) features that supports all data sources (DSN) and .csv/.json/.xlsx files**  
 - **New "data sources" pages to manage DSN and users**
 - **Drop download "compress to .gz" feature**
 - **Simplify authentification by just using JWT + HTTPS**
 
-## v0.2.2-beta **rolling release**
+## v0.2.2-beta
 - **Code refactoring, cleanup and quality improvment**
 - **JSON export now writes to a temporary file instead of processing in memory**
 - **CSV export no longer relies on external dependencies**

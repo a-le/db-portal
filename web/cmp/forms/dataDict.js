@@ -197,6 +197,7 @@ const DataDictForm = {
                     },
                         m('label', {
                             for: "procedureSel",
+                            style: "white-space: nowrap;",
                             title: "click to reload list",
                             onclick: () => {
                                 DataDictForm.getProcedures()
