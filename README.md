@@ -9,13 +9,30 @@
 **db-portal** is a cross-platform SQL editor with data dictionnary browsing and light ETL features.  
 Several DB vendors are supported, as well as CSV, JSON, and XLSX file formats.
 
-db-portal is designed for both solo and multi-user use.  
-Whether you need a simple tool for personal database management or a multi-user solution, it aims to provides a flexible and efficient way to interact.
+It is designed for both solo and multi-user use.  
+Whether you need a simple tool for personal database management or a multi-user solution, it aims to provides a flexible and efficient way to interact with data sources.
 
 ## Demo (v0.3.1)
-![Loading animation](.github/dataSources.gif)
-![Loading animation](.github/sqlEditor.gif)
-![Loading animation](.github/copyData.gif)
+Cick on images to see full size.  
+<table>
+    <tr>
+        <td>
+            <a href=".github/dataSources.gif" target="_blank">
+                <img src=".github/dataSources.gif" width="400" />
+            </a>
+        </td>
+        <td>
+            <a href=".github/sqlEditor.gif" target="_blank">
+                <img src=".github/sqlEditor.gif" width="400" />
+            </a>
+        </td>
+        <td>
+            <a href=".github/copyData.gif" target="_blank">
+                <img src=".github/copyData.gif" width="400" />
+            </a>
+        </td>
+    </tr>
+</table>
 
 ## Table of Contents
 - [Features](#features)
