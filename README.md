@@ -45,15 +45,15 @@ Cick on images to see full size.
 - [Configuration](#configuration)
 
 ## Features
-- Query all your databases through a unified web interface in your browser
-- Supports the following DB vendors: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL, SQLite and more to come.
+- Query your databases through a unified web interface in your browser
+- Supports the following DB vendors: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL and SQLite.
 - Write SQL queries in a syntax-highlighted minimalist editor
 - View query results in a smart HTML table
 - Browse data dictionaries (tables, columns, views, procedures)
 
 - ETL features
   - Use a GUI for ETL operations. Set source and destination, click submit and voilà ! 
-  - Data sources supported as source or destination: DB table, DB query, .json (2 formats supported), .xlsx, .csv 
+  - Data sources supported (as source or destination): DB table, DB query, .json (2 formats supported), .xlsx, .csv 
 
 - Solo or multi-user support
   - Solo: Simply add data sources (DSN), assign them to your user, and start using them.
