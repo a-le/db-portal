@@ -15,11 +15,11 @@ $releaseTempFolder = "db-portal-$($latestTag -replace '^v', '')"
 
 Write-Host "Latest version detected: $latestTag"
 
-Write-Host "Downloading db-portal.exe (download is slow, please wait)..."
-Invoke-WebRequest -Uri "https://github.com/a-le/db-portal/releases/download/$latestTag/db-portal.exe" -OutFile "db-portal.exe"
+Write-Host "Downloading db-portal.exe..."
+Start-BitsTransfer -Source "https://github.com/a-le/db-portal/releases/download/$latestTag/db-portal.exe" -Destination "db-portal.exe"
 
-Write-Host "Downloading release ZIP (download is slow, please wait)..."
-Invoke-WebRequest -Uri "https://github.com/a-le/db-portal/archive/refs/tags/$latestTag.zip" -OutFile "$latestTag.zip"
+Write-Host "Downloading release ZIP..."
+Start-BitsTransfer -Source "https://github.com/a-le/db-portal/archive/refs/tags/$latestTag.zip" -Destination "$latestTag.zip"
 
 Write-Host "Extracting release ZIP..."
 Expand-Archive -Path "$latestTag.zip" -DestinationPath "."
