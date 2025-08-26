@@ -25,7 +25,7 @@ Write-Host "Extracting release ZIP..."
 Expand-Archive -Path "$latestTag.zip" -DestinationPath "."
 
 Write-Host "Write config files, keeping existing files..."
-Copy-Item -Path "$releaseTempFolder\config" -Destination ".\config"
+Copy-Item  -Recurse -Path "$releaseTempFolder\config" -Destination ".\config"
 
 Write-Host "Write web files, overwriting existing files..."
 Copy-Item -Force -Recurse -Path "$releaseTempFolder\web" -Destination ".\web"

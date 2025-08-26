@@ -1,4 +1,4 @@
-/conf/jwt.key
+/config/jwt.key
 /vendor/
 /releases/
 /.vscode/
