@@ -36,6 +36,21 @@ Cick on images to see full size.
     </tr>
 </table>
 
+<table>
+    <tr>
+        <td>Windows installation
+            <a href=".github/winInstall.gif" target="_blank">
+                <img src=".github/winInstall.gif" width="400" />
+            </a>
+        </td>
+        <td>Linux installation
+            <a href=".github/linuxInstall.gif" target="_blank">
+                <img src=".github/linuxInstall.gif" width="400" />
+            </a>
+        </td>
+    </tr>
+</table>
+
 ## Table of Contents
 - [Features](#features)
 - [App Maturity](#app-maturity)
