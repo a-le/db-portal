@@ -87,13 +87,13 @@ Cick on images to see full size.
 
 **Linux/macOS:**  
 ```bash
-curl -sSfL https://raw.githubusercontent.com/a-le/db-portal/main/install/install.sh -o install.sh
+curl -LO https://raw.githubusercontent.com/a-le/db-portal/main/install/install.sh
 bash install.sh
 ```
 
 **Windows (PowerShell):**  
 ```powershell
-irm https://raw.githubusercontent.com/a-le/db-portal/main/install/install.ps1 -OutFile install.ps1
+curl.exe -LO https://raw.githubusercontent.com/a-le/db-portal/main/install/install.ps1
 powershell -File install.ps1
 ```
 <!--
