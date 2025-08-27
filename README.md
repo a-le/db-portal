@@ -6,11 +6,11 @@
 
 `db-portal`
 ## Project Description
-**db-portal** is a cross-platform SQL editor with data dictionnary browsing and light ETL features.  
-Several DB vendors are supported, as well as CSV, JSON, and XLSX file formats.
+**db-portal**, a cross-platform SQL editor with data dictionary browsing and light ETL features.  
+It runs as a Go HTTP server and is accessed through your browser.  
+It features an easy-to-use interface for ETL tasks. You can copy data between different sources—including various database vendors, as well as Excel, JSON, and CSV files.
 
-It is designed for both solo and multi-user use.  
-Whether you need a simple tool for personal database management or a multi-user solution, it aims to provides a flexible and efficient way to interact with data sources.
+It supports both solo and multi-user modes with role-based permissions where admins have full control, while regular users can only access their assigned data sources. 
 
 ## Demo (v0.3.1)
 Cick on images to see full size.  
