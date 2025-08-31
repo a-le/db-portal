@@ -11,7 +11,10 @@ function DataSourceInput() {
                 headers: App.getAuthHeaders(),
             }).then((response) => {
                 this.dsNames = response.data;
-            });
+                App.noServerResponse = false // temp hack
+            }).catch((e) => {
+                App.noServerResponse = true // temp hack
+            })
         },
         testDataSource: function (dsName, onSuccess) {
             this.connecting = true
@@ -22,10 +25,10 @@ function DataSourceInput() {
                 params: { username: App.getUsername(), dsName: dsName },
                 headers: App.getAuthHeaders(),
             }).then((response) => {
-                this.connecting = false;                    
+                this.connecting = false;
                 if (onSuccess) onSuccess(dsName, response)
             }).catch((e) => {
-                this.connecting = false; 
+                this.connecting = false;
                 this.error = e.response.error
             })
         },

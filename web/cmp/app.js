@@ -4,6 +4,7 @@ const App = {
     theme: "",
     dataTransferAction: false,
     claims: {},
+    noServerResponse: false,
     isLogged: () => {
         const jwt = localStorage.getItem(JWT_KEY);
         if (jwt === null)
@@ -42,6 +43,7 @@ const App = {
     },
     view: () => {
         return [
+            App.noServerResponse && m("div.error", "Server did not respond or may be down."),
             m("div.grid-main", { class: App.theme },
                 m("header.area-main-header.sticky",
                     m("div.grid", { style: "grid-template-columns: auto 1fr auto;" },

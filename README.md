@@ -4,16 +4,40 @@
 [![License](https://img.shields.io/github/license/a-le/db-portal)](https://github.com/a-le/db-portal/blob/main/LICENSE)
 
 
-`db-portal`
 ## Project Description
-**db-portal**, a cross-platform SQL editor with data dictionary browsing and light ETL features.  
-It runs as a Go HTTP server and is accessed through your browser.  
-It features an easy-to-use interface for ETL tasks. You can copy data between different sources—including various database vendors, as well as Excel, JSON, and CSV files.
+**db-portal** is a cross-platform SQL editor with data dictionary browsing and light ETL features that runs as a Go HTTP server and is accessed through your browser.
+It features an easy-to-use interface for ETL tasks. You can copy tabular data between different sources—including various database vendors, as well as Spreadsheet, JSON, and CSV files.
 
-It supports both solo and multi-user modes with role-based permissions where admins have full control, while regular users can only access their assigned data sources. 
+ It supports both single-user and multi-user modes with role-based permissions: admins have full control, while regular users can only access their assigned data sources.
 
-## Demo (v0.3.1)
-Cick on images to see full size.  
+
+## Table of Contents
+- [Features](#features)
+- [Demo](#)
+- [Quick Install](#quick-install)
+- [Roadmap](#roadmap)
+- [Built With](#built-with)
+- [Architecture Notes](#architecture-notes)
+- [Server Configuration](#server-configuration)
+- [Security Notice](#security-notice)
+
+## Features
+
+## 🔗data sources
+Manage users and database connections.
+Not all operations are supported yet. For those, the default `admin` user has access to the `SQLite db-portal` data source.
+To modify settings to your needs, simply execute SQL queries.
+
+## 🗎 SQL editor
+DSN connection with database/schema support.
+Simple editor with generic SQL syntax highlighting and paged results.  
+Data dictionary information and SQL object definitions when feature is supported by the DB vendor.
+
+## ⇄ copy data
+Copy data from/to any of supported tabular data sources (database table or query, .xlsx, .csv, .json).
+
+## Demo
+Click on images to see full size. (v0.3.1)  
 <table>
     <tr>
         <td>Manage data sources (DSN)
@@ -36,68 +60,7 @@ Cick on images to see full size.
     </tr>
 </table>
 
-<table>
-    <tr>
-        <td>Windows installation
-            <a href=".github/winInstall.gif" target="_blank">
-                <img src=".github/winInstall.gif" width="400" />
-            </a>
-        </td>
-        <td>Linux installation
-            <a href=".github/linuxInstall.gif" target="_blank">
-                <img src=".github/linuxInstall.gif" width="400" />
-            </a>
-        </td>
-    </tr>
-</table>
-
-## Table of Contents
-- [Features](#features)
-- [App Maturity](#app-maturity)
-- [Quick Installation](#quick-installation)
-- [Roadmap](#roadmap)
-- [Built With](#built-with)
-- [Architecture Notes](#architecture-notes)
-- [Server Configuration](#server-configuration)
-- [Configuration](#configuration)
-
-## Features
-- Query your databases through a unified web interface in your browser
-- Supports the following DB vendors: ClickHouse, MySQL/MariaDB, MSSQL, PostgreSQL and SQLite.
-- Write SQL queries in a syntax-highlighted minimalist editor
-- View query results in a smart HTML table
-- Browse data dictionaries (tables, columns, views, procedures)
-
-- ETL features
-  - Use a GUI for ETL operations. Set source and destination, click submit and voilà ! 
-  - Data sources supported (as source or destination): DB table, DB query, .json (2 formats supported), .xlsx, .csv 
-
-- Solo or multi-user support
-  - Solo: Simply add data sources (DSN), assign them to your user, and start using them.
-  - Multi-user: Add users and DSN, then assign DSN to specific users for controlled access.
-  - Regular users can only access the data sources and connections assigned to them, whereas admins have unrestricted access to all resources.
-
-- Implements industry-standard authentication and security practices
-  - Server based with HTTPS support
-  - Secure authentication via JWT
-
-- Developer friendly
-  - No CGO required for building from source
-  - Instantly see changes to `.js` (`.js` files are combined and minified on the fly) 
-
-- Light and efficient
-  - Minimal CPU and memory usage
-  - Custom JavaScript and CSS using a lightweight virtual DOM library (Mithril.js)
-
-- Cross-platform support: Windows, Linux, Mac OS and other OSes supported by Go
-- **see [CHANGELOG.md](https://raw.githubusercontent.com/a-le/db-portal/main/CHANGELOG.md) for latest features**
-
-
-## App maturity
-- > **Warning:** Not recommended for direct internet exposure unless you fully understand the security implications and have performed your own review and hardening.
-
-
-## Quick Installation
+## Quick install
 1. **Run the install script**
 
 **Linux/macOS:**  
@@ -121,24 +84,35 @@ powershell -File install.ps1
 3. **Open your browser and navigate to** [http://localhost:3000](http://localhost:3000)
 
 4. **Log in with the `admin` user with the password set at step 2**  
+---  
+<table>
+    <tr>
+        <td>Windows installation
+            <a href=".github/winInstall.gif" target="_blank">
+                <img src=".github/winInstall.gif" width="400" />
+            </a>
+        </td>
+        <td>Linux installation
+            <a href=".github/linuxInstall.gif" target="_blank">
+                <img src=".github/linuxInstall.gif" width="400" />
+            </a>
+        </td>
+    </tr>
+</table>
 
----
-
-
-## Roadmap / upcoming / ideas
+## Roadmap
 - JS codebase reorganization and quality improvements
 - Improve GUI integration of Data copy features and add abort execution support
 - Add DuckDB support
-- Use DuckDB for ETL task of reading XLSX files ?
-- Support base folders as data source for files ?
-- Replace CodeMirror by Prism (syntax highligthning) + custom js/mithril editor.
-- use github actions for CI
-- Load and save query/script files
+- Support other data sources (server-accessible folders, HTTP/HTTPS JSON resources)
+- Use a custom js/mithril component + Prism (syntax highligthning) as SQL Editor
+- Use github actions for CI
+- Load and save from the SQL Editor
 - Enhance data dictionary functionality
 - Support SQL scripts via CLI tools (psql, sqli etc...)
 - Act as a http DB proxy for other apps
-- add tests
-- Split the project into 2 separate repositories: server (Go backend) and client (web frontend) ?
+- Make REST APIs easier to use with curl or alternatives for scripting purposes
+- Add tests
 
 
 ## Built With
@@ -187,9 +161,5 @@ cert-file:
 key-file:
 ```
 
-## Manage users and database connections
-Common tasks now have a GUI.
-For operations that are not yet supported, 
-db-portal uses internally a SQLite database with a few tables.
-As shipped, the default `admin` user is allowed to the `SQLite db-portal` data source.
-To modify to your needs, you simply have to execute SQL queries.
+## Security Notice
+> **Warning:** Not recommended for direct internet exposure unless you fully understand the security implications and have performed your own review and hardening.
