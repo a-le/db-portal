@@ -29,9 +29,9 @@ Not all operations are supported yet. For those, the default `admin` user has ac
 To modify settings to your needs, simply execute SQL queries.
 
 ## 🗎 SQL editor
-DSN connection with database/schema support.  
 Simple editor with generic SQL syntax highlighting and paged results.  
-Data dictionary information and SQL object definitions when feature is supported by the DB vendor.
+Choose from your DSN connections, with database and schema support.  
+Display data dictionary information and SQL object definitions when feature is supported by the DB vendor.
 
 ## ⇄ copy data
 Copy data from/to any of supported tabular data sources (database table or query, .xlsx, .csv, .json).
