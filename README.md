@@ -13,7 +13,7 @@ It features an easy-to-use interface for ETL tasks. You can copy tabular data be
 
 ## Table of Contents
 - [Features](#features)
-- [Demo](#)
+- [Demo](#demo)
 - [Quick Install](#quick-install)
 - [Roadmap](#roadmap)
 - [Built With](#built-with)
@@ -24,12 +24,12 @@ It features an easy-to-use interface for ETL tasks. You can copy tabular data be
 ## Features
 
 ## 🔗data sources
-Manage users and database connections.
+Manage users and database connections.  
 Not all operations are supported yet. For those, the default `admin` user has access to the `SQLite db-portal` data source.
 To modify settings to your needs, simply execute SQL queries.
 
 ## 🗎 SQL editor
-DSN connection with database/schema support.
+DSN connection with database/schema support.  
 Simple editor with generic SQL syntax highlighting and paged results.  
 Data dictionary information and SQL object definitions when feature is supported by the DB vendor.
 
@@ -40,7 +40,7 @@ Copy data from/to any of supported tabular data sources (database table or query
 Click on images to see full size. (v0.3.1)  
 <table>
     <tr>
-        <td>Manage data sources (DSN)
+        <td>data sources
             <a href=".github/dataSources.gif" target="_blank">
                 <img src=".github/dataSources.gif" width="400" />
             </a>
@@ -52,7 +52,7 @@ Click on images to see full size. (v0.3.1)
         </td>
     </tr>
     <tr>
-        <td>Copy data page
+        <td>copy data
             <a href=".github/copyData.gif" target="_blank">
                 <img src=".github/copyData.gif" width="400" />
             </a>
