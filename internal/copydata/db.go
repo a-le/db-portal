@@ -1,7 +1,5 @@
 package copydata
 
-// todo: context.Background()...
-
 import (
 	"context"
 	"database/sql"
@@ -12,17 +10,19 @@ import (
 
 // dbRowReader implements RowReader for database sources.
 type dbRowReader struct {
+	ctx     context.Context
+	conn    *sql.Conn
 	rows    *sql.Rows
 	columns []string
 	types   []string
 }
 
-func NewDBRowReader(conn *sql.Conn, dbVendor string, query string, args ...any) (RowReader, error) {
+func NewDBRowReader(ctx context.Context, conn *sql.Conn, dbVendor string, query string, args ...any) (RowReader, error) {
 	if conn == nil {
 		return nil, errors.New("db connection is nil")
 	}
 
-	rows, err := conn.QueryContext(context.Background(), query, args...)
+	rows, err := conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +45,8 @@ func NewDBRowReader(conn *sql.Conn, dbVendor string, query string, args ...any) 
 	}
 
 	return &dbRowReader{
+		ctx:     ctx,
+		conn:    conn,
 		rows:    rows,
 		columns: cols,
 		types:   types,
@@ -75,25 +77,23 @@ func (r *dbRowReader) Types() []string  { return r.types }
 
 // dbRowWriter
 type dbRowWriter struct {
-	conn        *sql.Conn
+	ctx         context.Context
+	tx          *sql.Tx
 	table       string
 	createTable bool
 	columns     []string
-	types       []string
 	batch       [][]any
 	batchSize   int
 	dbVendor    string
 }
 
-func NewDBRowWriter(conn *sql.Conn, dbVendor string, table string, createTable bool, columns []string) (RowWriter, error) {
-	if conn == nil {
-		return nil, errors.New("db connection is nil")
-	}
-	if table == "" || len(columns) == 0 {
-		return nil, errors.New("table name or columns missing")
+func NewDBRowWriter(ctx context.Context, tx *sql.Tx, dbVendor string, table string, createTable bool, columns []string) (RowWriter, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is nil")
 	}
 	return &dbRowWriter{
-		conn:        conn,
+		ctx:         ctx,
+		tx:          tx,
 		table:       table,
 		createTable: createTable,
 		columns:     columns,
@@ -115,11 +115,11 @@ func (w *dbRowWriter) WriteFields(columns []string, types []string) error {
 	var colsDef []string
 	for i, col := range columns {
 		sqlType := dbutil.VendorType(w.dbVendor, types[i])
-		colsDef = append(colsDef, col+" "+sqlType)
+		colsDef = append(colsDef, dbutil.QuoteIdentifier(w.dbVendor, col)+" "+sqlType)
 	}
-	query := "CREATE TABLE " + w.table + " (" + joinColumns(colsDef) + ")"
+	query := "CREATE TABLE " + dbutil.QuoteIdentifier(w.dbVendor, w.table) + " (" + joinColumns(colsDef) + ")"
 
-	_, err := w.conn.ExecContext(context.Background(), query)
+	_, err := w.tx.ExecContext(w.ctx, query)
 	return err
 }
 
@@ -131,16 +131,19 @@ func (w *dbRowWriter) WriteRow(row Row) (rowsWritten int, err error) {
 	return
 }
 
+// Flush handles batch execution
 func (w *dbRowWriter) Flush() (rowsWritten int, err error) {
 	if len(w.batch) == 0 {
-		return
+		return 0, nil
 	}
+
 	numRows := len(w.batch)
 	numCols := len(w.columns)
 	placeholders, err := dbutil.SetBatchPlaceholders(w.dbVendor, numCols, numRows)
 	if err != nil {
-		return
+		return 0, err
 	}
+
 	// Build VALUES clause
 	valuesClause := ""
 	for i := range numRows {
@@ -151,12 +154,23 @@ func (w *dbRowWriter) Flush() (rowsWritten int, err error) {
 		end := start + numCols
 		valuesClause += "(" + joinColumns(placeholders[start:end]) + ")"
 	}
-	query := "INSERT INTO " + w.table + " (" + joinColumns(w.columns) + ") VALUES " + valuesClause
+
+	// Quote colnames
+	quoted := make([]string, len(w.columns))
+	for i, colname := range w.columns {
+		quoted[i] = dbutil.QuoteIdentifier(w.dbVendor, colname)
+	}
+
+	query := "INSERT INTO " + dbutil.QuoteIdentifier(w.dbVendor, w.table)
+	query += " (" + joinColumns(quoted)
+	query += ") VALUES " + valuesClause
+
 	args := []any{}
 	for _, row := range w.batch {
 		args = append(args, row...)
 	}
-	_, err = w.conn.ExecContext(context.Background(), query, args...)
+
+	_, err = w.tx.ExecContext(w.ctx, query, args...)
 	w.batch = w.batch[:0]
 	return numRows, err
 }

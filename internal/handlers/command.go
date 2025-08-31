@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"db-portal/internal/dbutil"
 	"db-portal/internal/response"
@@ -39,7 +38,7 @@ func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
 
 	// get DB connection
 	var conn *sql.Conn
-	conn, err = dbutil.GetConn(ds.Vendor, ds.Location, true)
+	conn, err = dbutil.GetConn(r.Context(), ds.Vendor, ds.Location, true)
 	if err != nil {
 		resp.Error = err.Error()
 		response.WriteJSON(w, http.StatusOK, &resp)
@@ -87,7 +86,7 @@ func (s *Services) CommandHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// run the command
-	if resp.Data, err = dbutil.QueryWithResult(context.Background(), conn, command, args, 0); err != nil {
+	if resp.Data, err = dbutil.QueryWithResult(r.Context(), conn, command, args, 0); err != nil {
 		resp.Data.DBerror = err.Error()
 		response.WriteJSON(w, http.StatusOK, &resp)
 		return

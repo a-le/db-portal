@@ -1,6 +1,6 @@
 package meta
 
-const AppVersion = "0.3.0-beta"
+const AppVersion = "0.3.2"
 const AppName = "db-portal"
 
 const WebFolder = "./web"

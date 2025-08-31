@@ -36,7 +36,7 @@ const App = {
         App.theme = theme ? theme : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark-mode" : "light-mode";
 
         App.pageState = new UIState({
-            def: localStorage.getItem("pageState") || "datasources",
+            def: window.location.hash.substring(1) || localStorage.getItem("pageState") || "datasources",
             onSet: (tab) => { localStorage.setItem("pageState", tab) }
         });
     },
@@ -50,20 +50,25 @@ const App = {
                             m("span.ml-10", "v", versionInfo.AppVersion),
                         ),
                         m("div.grid-col.ml-auto.mr-auto",
-                            App.getIsAdmin() && 
-                            [m(".tab.tab-b.mr-30", {
-                                class: App.pageState.selectedClass("datasources"),
-                                onclick: () => {
-                                    App.pageState.set("datasources");
-                                }
-                            }, m.trust("&#128279;data sources"))],
-                            m(".tab.tab-b.mr-30", {
+                            App.getIsAdmin() &&
+                            [
+                                m("a.tab.tab-b.mr-30.no-underline", {
+                                    href: "#datasources",
+                                    class: App.pageState.selectedClass("datasources"),
+                                    onclick: () => {
+                                        App.pageState.set("datasources");
+                                    }
+                                }, m.trust("&#128279;data sources"))
+                            ],
+                            m("a.tab.tab-b.mr-30.no-underline", {
+                                href: "#query",
                                 class: App.pageState.selectedClass("query"),
                                 onclick: () => {
                                     App.pageState.set("query");
                                 }
-                            }, m.trust("&#128462;&ThinSpace;SQL query")),
-                            m(".tab.tab-b", {
+                            }, m.trust("&#128462;&ThinSpace;SQL editor")),
+                            m("a.tab.tab-b.no-underline", {
+                                href: "#copy",
                                 class: App.pageState.selectedClass("copy"),
                                 onclick: () => {
                                     App.pageState.set("copy");

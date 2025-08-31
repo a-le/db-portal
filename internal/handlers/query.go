@@ -33,7 +33,7 @@ func (s *Services) QueryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get conn
-	conn, err := dbutil.GetConn(ds.Vendor, ds.Location, false)
+	conn, err := dbutil.GetConn(r.Context(), ds.Vendor, ds.Location, false)
 	if err != nil {
 		resp.Error = err.Error()
 		response.WriteJSON(w, http.StatusInternalServerError, &resp)

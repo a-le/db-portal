@@ -87,7 +87,7 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 			response.WriteJSON(w, http.StatusNotFound, &resp)
 			return
 		}
-		if originConn, err = dbutil.GetConn(ds.Vendor, ds.Location, false); err != nil {
+		if originConn, err = dbutil.GetConn(r.Context(), ds.Vendor, ds.Location, false); err != nil {
 			resp.Error = fmt.Sprintf("failed to connect to origin: %v", err)
 			response.WriteJSON(w, http.StatusInternalServerError, &resp)
 			return
@@ -111,16 +111,25 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Prepare destination database connection
-	var destConn *sql.Conn
-	if req.DestEP.DSName != "" {
+	// Create src row reader
+	src, err := copydata.NewRowReader(req.OriginEP, r.Context(), originConn, originFile)
+	if err != nil {
+		resp.Error = err.Error()
+		response.WriteJSON(w, http.StatusBadRequest, &resp)
+		return
+	}
+
+	// Prepare destination database transaction
+	var destTx *sql.Tx
+	if req.DestEP.Type == "table" {
+		var destConn *sql.Conn
 		ds, err := s.Store.RequireUserDataSource(currentUsername, currentUsername, req.DestEP.DSName)
 		if err != nil {
 			resp.Error = fmt.Sprintf("destination data source %v not found or not allowed", req.DestEP.DSName)
 			response.WriteJSON(w, http.StatusNotFound, &resp)
 			return
 		}
-		if destConn, err = dbutil.GetConn(ds.Vendor, ds.Location, false); err != nil {
+		if destConn, err = dbutil.GetConn(r.Context(), ds.Vendor, ds.Location, false); err != nil {
 			resp.Error = fmt.Sprintf("failed to connect to destination: %v", err)
 			response.WriteJSON(w, http.StatusInternalServerError, &resp)
 			return
@@ -142,30 +151,22 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+
+		// Start transaction
+		destTx, err = destConn.BeginTx(r.Context(), nil)
+		if err != nil {
+			resp.Error = fmt.Sprintf("failed to begin transaction: %v", err)
+			response.WriteJSON(w, http.StatusInternalServerError, &resp)
+			return
+		}
+
+		defer destTx.Rollback() // Safe to call even if already committed
 	}
 
-	// Create row reader based on origin endpoint
-	src, err := copydata.NewRowReader(req.OriginEP, originConn, originFile)
-	if err != nil {
-		resp.Error = err.Error()
-		response.WriteJSON(w, http.StatusBadRequest, &resp)
-		return
-	}
-
-	// Create row writer based on destination endpoint
+	// Prepare destination file for streaming.
 	var destWriter io.Writer
 	if req.DestEP.Type == "file" {
 		destWriter = w // use http.ResponseWriter as destWriter to stream file to client
-	}
-	dst, err := copydata.NewRowWriter(req.DestEP, destConn, destWriter, src.Fields())
-	if err != nil {
-		resp.Error = err.Error()
-		response.WriteJSON(w, http.StatusBadRequest, &resp)
-		return
-	}
-
-	// Prepare to stream file.
-	if req.DestEP.Type == "file" {
 		ext := req.DestEP.Format
 		if len(ext) > 4 {
 			ext = req.DestEP.Format[:4]
@@ -174,8 +175,28 @@ func (s *Services) CopyHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 	}
 
+	// Create dest row writer
+	dst, err := copydata.NewRowWriter(req.DestEP, r.Context(), destTx, destWriter, src.Fields())
+	if err != nil {
+		resp.Error = err.Error()
+		response.WriteJSON(w, http.StatusBadRequest, &resp)
+		return
+	}
+
 	// Copy data
 	resp.Data.Reads, resp.Data.Writes, err = copydata.CopyData(src, dst)
+
+	// Handle transaction commit/rollback for database destination
+	if req.DestEP.Type == "table" {
+		if err != nil {
+			fmt.Println("rollback")
+			destTx.Rollback()
+		} else {
+			if commitErr := destTx.Commit(); commitErr != nil {
+				err = fmt.Errorf("failed to commit transaction: %w", commitErr)
+			}
+		}
+	}
 
 	// End file response
 	if req.DestEP.Type == "file" {

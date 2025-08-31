@@ -3,6 +3,7 @@ package dbutil
 import (
 	"db-portal/internal/types"
 	"fmt"
+	"strings"
 )
 
 func DriverName(dbVendor string) (driverName string, err error) {
@@ -67,8 +68,8 @@ func SetBatchPlaceholders(dbVendor string, numCols, numRows int) ([]string, erro
 		return nil, err
 	}
 	placeholders := make([]string, numCols*numRows)
-	for row := 0; row < numRows; row++ {
-		for col := 0; col < numCols; col++ {
+	for row := range numRows {
+		for col := range numCols {
 			idx := row*numCols + col
 			switch placeholderStyle {
 			case "?":
@@ -83,4 +84,24 @@ func SetBatchPlaceholders(dbVendor string, numCols, numRows int) ([]string, erro
 		}
 	}
 	return placeholders, nil
+}
+
+// QuoteIdentifier returns the identifier (table name, column name, etc.) quoted according to the dbVendor's syntax.
+func QuoteIdentifier(dbVendor, identifier string) (quoted string) {
+	switch dbVendor {
+	case types.DBVendorClickHouse, types.DBVendorMySQL, types.DBVendorMariaDB, types.DBVendorSQLite:
+		// Escape backticks by doubling them
+		identifier = strings.ReplaceAll(identifier, "`", "``")
+		quoted = "`" + identifier + "`"
+	case types.DBVendorMSSQL:
+		// Escape closing brackets by doubling them
+		identifier = strings.ReplaceAll(identifier, "]", "]]")
+		quoted = "[" + identifier + "]"
+	case types.DBVendorPostgres:
+		// Escape double quotes by doubling them
+		identifier = strings.ReplaceAll(identifier, `"`, `""`)
+		quoted = `"` + identifier + `"`
+	default:
+	}
+	return
 }

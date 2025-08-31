@@ -225,21 +225,6 @@ var typeAliases = map[string]string{
 	"NULLABLE":                    "", // unwrap
 }
 
-// Build inverse mapping from forward map
-// func buildInverse(matrix map[string]map[string]string) map[string]map[string]string {
-// 	inverse := make(map[string]map[string]string)
-// 	for canonical, vendors := range matrix {
-// 		for vendor, vtype := range vendors {
-// 			if inverse[vendor] == nil {
-// 				inverse[vendor] = make(map[string]string)
-// 			}
-// 			key := CanonicalType(vendor, vtype)
-// 			inverse[vendor][key] = canonical
-// 		}
-// 	}
-// 	return inverse
-// }
-
 // CanonicalType get a canonical type from a vendor type (=SQL type/domain).
 // Example: INT32 -> int
 // Returns "text" as fallback for unknown types.

@@ -24,7 +24,7 @@ func (s *Services) HandleUserDataSourceTest(w http.ResponseWriter, r *http.Reque
 	}
 
 	// try to get conn from DB server
-	conn, err := dbutil.GetConn(ds.Vendor, ds.Location, false)
+	conn, err := dbutil.GetConn(r.Context(), ds.Vendor, ds.Location, false)
 	if err != nil {
 		resp.Error = err.Error()
 		response.WriteJSON(w, http.StatusInternalServerError, &resp)

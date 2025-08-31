@@ -1,4 +1,12 @@
 # Changelog
+## v0.3.2
+- **Server config timeout support: applies to APIs requests. DB operations exceeding it will be aborted** 
+- **Copy data: use a SQL transaction for batch inserts to database destination**
+- **Copy data: quote and escape identifiers in database destination queries**
+- **UI: add link to tabs to make it easier to open in a new window (with the tab selected)**
+- **UI - SQL Editor: fix abort execution**
+- **display app name and version when server starts**
+- **add --version command line flag to display version information**
 
 ## v0.3.1
 - **copy data: schema support for DB source/dest**

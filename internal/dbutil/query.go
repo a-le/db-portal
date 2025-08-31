@@ -72,7 +72,7 @@ func ExecWithResult(ctx context.Context, conn *sql.Conn, query string, args []an
 
 	startTime := time.Now()
 	var result sql.Result
-	result, err = conn.ExecContext(context.Background(), query, args...)
+	result, err = conn.ExecContext(ctx, query, args...)
 	dResult.Duration = time.Since(startTime)
 	if err != nil {
 		dResult.DBerror = err.Error()

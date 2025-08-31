@@ -14,7 +14,7 @@ var dbCache = struct {
 }{dbs: make(map[string]*sql.DB)}
 
 // GetConn returns a connection from dbCache with useCache = true, else it returns a new connection.
-func GetConn(vendor string, location string, useCache bool) (conn *sql.Conn, err error) {
+func GetConn(ctx context.Context, vendor string, location string, useCache bool) (conn *sql.Conn, err error) {
 
 	var driverName string
 	if driverName, err = DriverName(vendor); err != nil {
@@ -41,7 +41,7 @@ func GetConn(vendor string, location string, useCache bool) (conn *sql.Conn, err
 	}
 
 	// Get a single connection from the pool
-	conn, err = db.Conn(context.Background())
+	conn, err = db.Conn(ctx)
 	if err != nil {
 		if cacheHit {
 			db.Close()

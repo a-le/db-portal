@@ -18,7 +18,7 @@ function CopyDataPage() {
                     const popup = window.open('', 'exportpage', 'width=800,height=600');
                     const message = self.getDestinationType() === "file" 
                     ? "Preparing file. The download will start soon, please be patient..." 
-                    : "Copying data. A report will be displayed, please be patient..."
+                    : "Copying data. A json report will be displayed when finished, please be patient..."
                     if (popup) {
                         popup.document.write(`<html><head><style>body { color: #222; background: #fff; }@media (prefers-color-scheme: dark) {body { color: #eee; background: #222; }}</style></head><body><div>${message}</div><button onclick="window.close()">Close</button></body></html>`);
                         popup.document.close();
@@ -44,7 +44,14 @@ function CopyDataPage() {
                         disabled: this.executing
                     }, this.getDestinationType() === "file" ? "download" : "copy data")
                 ),
-                //m("pre", this.infoText)
+                this.getDestinationType() === "table" && [
+                    m("strong", "ℹ️ Transaction Safety"),
+                    m("pre", { style: "margin: 5px 0 0 0; font-size: 14px;" }, 
+                        "This copy operation uses a database transaction.\n If any error occurs during the process, " +
+                        "all changes will be automatically rolled back, leaving your destination table unchanged.\n " +
+                        "The copy will either complete successfully with all data, or fail completely with no partial data."
+                    )
+                ]
             ]);
         }
     };

@@ -591,9 +591,6 @@ code {
   font-style: italic;
 }
 
-.no-select {
-  user-select: none;
-}
 
 .font-sm {
   font-size: 80%;

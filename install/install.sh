@@ -17,9 +17,9 @@ echo "Latest version detected: $latest_tag"
 
 os=$(uname | tr '[:upper:]' '[:lower:]')
 if [[ "$os" == "linux" ]]; then
-    binary="db-portal-linux"
+    binary="db-portal-linux-amd64"
 elif [[ "$os" == "darwin" ]]; then
-    binary="db-portal-darwin"
+    binary="db-portal-darwin-arm64"
 else
     echo "Unsupported OS: $os"
     exit 1

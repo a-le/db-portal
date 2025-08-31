@@ -23,7 +23,13 @@ func main() {
 	// Declare and parse command line flags
 	configPathFlag := flag.String("config", "", "Path to config folder")
 	setMasterPasswordFlag := flag.String("set-master-password", "", "Set new password for master user (id=1)")
+	versionFlag := flag.Bool("version", false, "Display version information")
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("%s %s\n", meta.AppName, meta.AppVersion)
+		return
+	}
 
 	configPath, err := config.NewConfigPath(*configPathFlag)
 	if err != nil {
@@ -94,8 +100,13 @@ func main() {
 
 	// Core middleware stack
 	r.Use(middleware.Logger)
-	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middleware.Compress(5, "text/html", "text/css", "application/json", "text/javascript"))
+
+	if serverConfig.Data.Timeout > 0 {
+		duration := time.Duration(serverConfig.Data.Timeout) * time.Second
+		r.Use(middleware.Timeout(duration))
+		fmt.Printf("request timeout is set to: %v\n", duration)
+	}
 
 	// Public routes
 	r.Get("/", svcs.IndexHandler)
@@ -138,13 +149,14 @@ func main() {
 	}
 
 	// Start the server with HTTPS if cert and key files are provided, otherwise use HTTP
+	serverName := fmt.Sprintf("%s %s", meta.AppName, meta.AppVersion)
 	if useHTTPS {
-		fmt.Printf("server is listening at https://%s\n", httpServer.Addr)
+		fmt.Printf("%s is listening at https://%s\n", serverName, httpServer.Addr)
 		if err := httpServer.ListenAndServeTLS(serverConfig.Data.CertFile, serverConfig.Data.KeyFile); err != nil {
 			log.Fatalf("server failed to start at https://%s: %v", httpServer.Addr, err)
 		}
 	} else {
-		fmt.Printf("server is listening at http://%s\n", httpServer.Addr)
+		fmt.Printf("%s is listening at http://%s\n", serverName, httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil {
 			log.Fatalf("server failed to start at http://%s: %v", httpServer.Addr, err)
 		}

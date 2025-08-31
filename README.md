@@ -127,7 +127,7 @@ powershell -File install.ps1
 
 ## Roadmap / upcoming / ideas
 - JS codebase reorganization and quality improvements
-- Improve integration of ETL / Data copy features
+- Improve GUI integration of Data copy features and add abort execution support
 - Add DuckDB support
 - Use DuckDB for ETL task of reading XLSX files ?
 - Support base folders as data source for files ?
@@ -160,14 +160,29 @@ powershell -File install.ps1
 
 server.yaml
 ```yaml
-# main configuration file
-# ! restart app if you change this file !
-# server address
-addr: "localhost:3000"  # host:port to listen on. Default is "localhost:3000"
-# databases
-max-resultset-length: 500  # maximum number of rows in a resultset. This applies only to the UI, not to file export. Default is 500
+# Main configuration file
+# Restart the server if you modify this file.
+
+# Server address
+# Host and port to listen on.
+# Default is "localhost:3000"
+addr: "localhost:3000"
+
+# SQL editor
+# Maximum number of rows in a result set.
+# This applies only to results displayed in the SQL editor.
+# Rows exceeding this limit will be discarded on the server side.
+# The UI will display that the result set was truncated.
+# Default is 500
+max-resultset-length: 500
+
+# Request timeout
+# Database queries will be cancelled if they exceed the configured timeout.
+# Default is 0 (no timeout)
+timeout: 0
+
 # HTTPS support
-# use mkcert https://github.com/FiloSottile/mkcert for easy self-signed certificates. 
+# Use mkcert (https://github.com/FiloSottile/mkcert) for easy self-signed certificates.
 cert-file:
 key-file:
 ```
